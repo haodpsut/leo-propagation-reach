@@ -68,10 +68,40 @@ def walker(name):
     return Walker(tot, planes, f, inc, alt)
 
 
+import hashlib
+import os
+
+CACHE_DIR = os.environ.get("LEO_EIG_CACHE", os.path.join(os.path.dirname(__file__), "..", "cache"))
+
+
+def eig_cached(A, key):
+    """Eigendecomposition of L(A), cached on disk as float32.
+
+    ⛔ WHY (11/09/2026, measured on the VPS): the same graph A is eigendecomposed 24 times
+    (3 ops x 4 t-arms x 2 tasks share A), and two processes fighting over 80 cores for eigh
+    made an s4400 cell take ~1000 s instead of ~130 s. Training already casts w,U to float32
+    (see _tensors), so a float32 cache is numerically IDENTICAL to recomputing. The cache key
+    includes a hash of A, so a changed graph can never hit a stale file.
+    """
+    h = hashlib.sha1(np.packbits(A > 0).tobytes()).hexdigest()[:12]
+    path = os.path.join(CACHE_DIR, f"{key}_{A.shape[0]}_{h}.npz")
+    if os.path.exists(path):
+        z = np.load(path)
+        return z["w"], z["U"]
+    w, U = eig_sym(laplacian(A, normalized=False))
+    w, U = w.astype(np.float32), U.astype(np.float32)
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    tmp = path + f".{os.getpid()}.tmp"
+    with open(tmp, "wb") as fh:          # np.savez(str) would append ".npz" to the tmp name
+        np.savez(fh, w=w, U=U)
+    os.replace(tmp, path)          # atomic: two processes may race on the same key
+    return w, U
+
+
 class ScaleSample:
     """Snapshot + destination. target='hops' (old task) or 'delay' (propagation delay field)."""
 
-    def __init__(self, A, W, dest, target="hops"):
+    def __init__(self, A, W, dest, target="hops", eig_key=None):
         self.A, self.dest, self.n, self.target = A, dest, A.shape[0], target
         hops = bfs_hops(A, dest)
         self.reachable = np.isfinite(hops)
@@ -92,20 +122,25 @@ class ScaleSample:
         seed = np.zeros(self.n, dtype=np.float32)
         seed[dest] = 1.0
         self.X = np.stack([seed, (deg / max(deg.max(), 1.0)).astype(np.float32)], axis=1)
-        w, U = eig_sym(laplacian(A, normalized=False))
-        self.w, self.U = w.astype(np.float64), U.astype(np.float64)
+        if eig_key is None:
+            w, U = eig_sym(laplacian(A, normalized=False))
+            w, U = w.astype(np.float32), U.astype(np.float32)
+        else:
+            w, U = eig_cached(A, eig_key)
+        self.w, self.U = w, U
 
 
 def make_samples(name, n, seed, target="hops", seam=True):
     wk = walker(name)
     rng = np.random.default_rng(seed)
     out = []
-    for _ in range(n):
+    for i in range(n):
         t = float(rng.uniform(0, wk.period_s))
         A, W = grid_isl_graph(wk, t, seam=seam)
         cc = largest_cc(A)
         A, W = A[np.ix_(cc, cc)], W[np.ix_(cc, cc)]
-        out.append(ScaleSample(A, W, int(rng.integers(0, A.shape[0])), target=target))
+        out.append(ScaleSample(A, W, int(rng.integers(0, A.shape[0])), target=target,
+                               eig_key=f"{name}_s{seed}_{i}"))
     return out
 
 

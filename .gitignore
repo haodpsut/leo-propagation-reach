@@ -6,3 +6,4 @@ results/*.csv
 paper/*.pdf
 paper/*.aux
 paper/*.log
+cache/

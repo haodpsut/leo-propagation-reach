@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 mkdir -p results
 launch() {  # gpu tp ti
   local gpu=$1 tp=$2 ti=$3 tag="${2}_t${3}"
-  CUDA_VISIBLE_DEVICES=$gpu nohup $PY -u experiments/exp_scale.py --device cuda --workers 1 \
+  OMP_NUM_THREADS=36 MKL_NUM_THREADS=36 OPENBLAS_NUM_THREADS=36 CUDA_VISIBLE_DEVICES=$gpu nohup $PY -u experiments/exp_scale.py --device cuda --workers 1 \
      --t-param "$tp" --t-init "$ti" --out "results/scale_${tag}.csv" > "/tmp/leo_${tag}.log" 2>&1
 }
 # GPU0: relu 0.5 -> relu 2.0 ; GPU1: softplus 0.5 -> softplus 2.0  (tuan tu trong moi GPU)
