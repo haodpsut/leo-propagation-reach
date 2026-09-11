@@ -30,11 +30,11 @@ def load(path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("csv")
+    ap.add_argument("csv", nargs="+", help="one or more CSVs (one per arm is fine)")
     ap.add_argument("--out", default=None)
     ap.add_argument("--metric", default="mae", choices=["mae", "aurc"])
     a = ap.parse_args()
-    rows = load(a.csv)
+    rows = [r for f in a.csv for r in load(f)]
     out = []
     P = out.append
     n_inv = sum(not r["valid"] for r in rows)
