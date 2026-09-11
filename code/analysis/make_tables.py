@@ -30,6 +30,16 @@ def load(path):
         r["seed"] = int(r["seed"])
         r["valid"] = r["valid"] == "True"
         r["beats_const"] = r["beats_const"] == "True"
+        r["monotone"] = r["monotone"] == "True"
+        # ⛔ 11/09 22:30, after grid 2: 53 rows were flagged invalid by the ">=10% loss drop" rule
+        #    although all were finite, monotone, and sat exactly at the constant floor with their
+        #    valid peers. That is a PLATEAU (the model stayed at the constant solution from the
+        #    start), not a training pathology. Pathology = NaN or non-monotone only. Plateau rows
+        #    are legitimate outcomes: kept in means, counted in their own column.
+        finite = r["mae"] == r["mae"] and r["train_mae"] not in ("nan", "NaN")
+        r["pathology"] = (not finite) or (not r["monotone"])
+        r["plateau"] = (not r["valid"]) and not r["pathology"]
+        r["use"] = not r["pathology"]
     return rows
 
 
@@ -42,8 +52,10 @@ def main():
     rows = [r for f in a.csv for r in load(f)]
     out = []
     P = out.append
-    n_inv = sum(not r["valid"] for r in rows)
-    P(f"# scale study: {len(rows)} runs, {n_inv} INVALID (kept in CSV, excluded from means)\n")
+    n_path = sum(r["pathology"] for r in rows)
+    n_plat = sum(r["plateau"] for r in rows)
+    P(f"# scale study: {len(rows)} runs · {n_path} PATHOLOGY (NaN/non-monotone, excluded) · "
+      f"{n_plat} plateau (flat loss at the constant floor, kept)\n")
 
     # group: (task, shell, arm) -> op -> list of rows
     G = collections.defaultdict(lambda: collections.defaultdict(list))
@@ -59,7 +71,7 @@ def main():
     for task in tasks:
         for arm in arms:
             P(f"\n## task={task} · arm={arm} · metric={a.metric}\n")
-            P("| shell | " + " | ".join(f"{op} mean±std (n valid / n inv / beats-const)" for op in ops)
+            P("| shell | " + " | ".join(f"{op} mean±std (n used / n pathology / n plateau / beats-const)" for op in ops)
               + " | heat vs qw: seeds won | verdict |")
             P("|---|" + "---|" * (len(ops) + 2))
             for sh in shells:
@@ -69,19 +81,20 @@ def main():
                 stats, line = {}, [sh]
                 for op in ops:
                     rs = cell.get(op, [])
-                    v = [r for r in rs if r["valid"]]
+                    v = [r for r in rs if r["use"]]
                     m = [r[a.metric] for r in v]
-                    inv = len(rs) - len(v)
+                    inv = sum(r["pathology"] for r in rs)
+                    plat = sum(r["plateau"] for r in rs)
                     bc = sum(r["beats_const"] for r in v)
                     if m:
                         mu = sum(m) / len(m)
                         sd = (sum((x - mu) ** 2 for x in m) / max(len(m) - 1, 1)) ** 0.5
                         stats[op] = {r["seed"]: r[a.metric] for r in v}
-                        line.append(f"{mu:.4f}±{sd:.4f} ({len(v)}/{inv}/{bc})")
+                        line.append(f"{mu:.4f}±{sd:.4f} ({len(v)}/{inv}/{plat}/{bc})")
                     else:
-                        line.append(f"— (0/{inv}/0)")
+                        line.append(f"— (0/{inv}/{plat}/0)")
                 # floor check: does the best operator learn anything beyond the constant?
-                cm = [r["const_mae"] for op in ops for r in cell.get(op, []) if r["valid"]]
+                cm = [r["const_mae"] for op in ops for r in cell.get(op, []) if r["use"]]
                 best = min((sum(v.values()) / len(v) for v in stats.values()), default=None)
                 gain = (sum(cm) / len(cm) - best) / (sum(cm) / len(cm)) if cm and best else 0.0
                 floor = gain < FLOOR_GAIN
@@ -129,7 +142,7 @@ def main():
                 if not cell:
                     continue
                 def mt(op):
-                    ts = [json.loads(r["t_learned"]) for r in cell.get(op, []) if r["valid"]]
+                    ts = [json.loads(r["t_learned"]) for r in cell.get(op, []) if r["use"]]
                     if not ts:
                         return "—"
                     L = len(ts[0])

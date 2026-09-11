@@ -136,3 +136,13 @@ khi lưới 2 xong, cùng máy.
 
 Quy tắc đọc không đổi: thắng = trung bình thấp hơn VÀ ≥7/10 seed, chỉ khi ô vượt sàn 5%, và chỉ
 tuyên bố thứ hạng nếu bền qua cả hai nhánh t.
+
+## ⛔ BỔ SUNG 11/09/2026 22:30, sau lưới 2: cổng hợp lệ báo động giả ở ô sàn
+
+Lưới 2 có 53/960 ô bị gắn "không hợp lệ" bởi tiêu chí "loss giảm ≥10% từ phần ba đầu tới phần
+ba cuối". Kiểm tay: cả 53 đều hữu hạn, đơn điệu, MAE **bằng đúng** các ô hợp lệ cùng ô (0,1873 so
+với 0,1870±0,0005). Chúng rơi vào nghiệm hằng số ngay từ đầu nên loss phẳng: đó là **PLATEAU**,
+một kết quả thật, không phải bệnh lý huấn luyện. ⇒ Cách báo cáo: **bệnh lý = NaN hoặc không đơn
+điệu** (loại khỏi trung bình, đếm); **plateau** giữ trong trung bình, đếm ở cột riêng. Không thay
+đổi số nào đã chạy; chỉ đổi cách đọc, và ghi lại vì đây là lần thứ hai cổng hợp lệ của bài này
+phải sửa (lần 1: ngưỡng 0,5).
