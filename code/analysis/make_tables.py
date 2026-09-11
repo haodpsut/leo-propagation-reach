@@ -37,7 +37,11 @@ def load(path):
         #    start), not a training pathology. Pathology = NaN or non-monotone only. Plateau rows
         #    are legitimate outcomes: kept in means, counted in their own column.
         finite = r["mae"] == r["mae"] and r["train_mae"] not in ("nan", "NaN")
-        r["pathology"] = (not finite) or (not r["monotone"])
+        # non-monotone counts as pathology only beyond a 1% relative rise between thirds; the
+        # 19 "non-monotone" rows of grid 2 rose by 0.00005 on a flat plateau (0.05583 -> 0.05588)
+        th = json.loads(r["loss_thirds"])
+        rising = any(th[i + 1] > th[i] * 1.01 for i in range(len(th) - 1))
+        r["pathology"] = (not finite) or rising
         r["plateau"] = (not r["valid"]) and not r["pathology"]
         r["use"] = not r["pathology"]
     return rows
