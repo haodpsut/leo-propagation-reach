@@ -15,6 +15,11 @@ import json
 import sys
 
 WIN_SEEDS = 7          # out of 10, declared
+# ⛔ Added 11/09 14:40, BEFORE any s3168/s1584 row existed, after the first s4400 rows: all ops
+#    sat within 0.0005 of the constant predictor. A "win" inside that band is a floor artefact,
+#    not a ranking. FLOOR_GAIN = minimum relative gain of the BEST op over the constant predictor
+#    for a cell to be rankable at all. Cells below it print "FLOOR" and never count as a win.
+FLOOR_GAIN = 0.05
 
 
 def load(path):
@@ -75,6 +80,11 @@ def main():
                         line.append(f"{mu:.4f}±{sd:.4f} ({len(v)}/{inv}/{bc})")
                     else:
                         line.append(f"— (0/{inv}/0)")
+                # floor check: does the best operator learn anything beyond the constant?
+                cm = [r["const_mae"] for op in ops for r in cell.get(op, []) if r["valid"]]
+                best = min((sum(v.values()) / len(v) for v in stats.values()), default=None)
+                gain = (sum(cm) / len(cm) - best) / (sum(cm) / len(cm)) if cm and best else 0.0
+                floor = gain < FLOOR_GAIN
                 # paired seed comparison heat vs qw
                 if "heat" in stats and "qw" in stats:
                     common = sorted(set(stats["heat"]) & set(stats["qw"]))
@@ -88,7 +98,9 @@ def main():
                         vd = "heat"
                     else:
                         vd = "tie" if len(common) >= WIN_SEEDS else f"n<{WIN_SEEDS}"
-                    line.append(f"heat {hw} · qw {qw} (of {len(common)})")
+                    if floor:
+                        vd = f"FLOOR (gain {gain*100:.1f}% < {FLOOR_GAIN*100:.0f}%)"
+                    line.append(f"heat {hw} · qw {qw} (of {len(common)}) · gain {gain*100:.1f}%")
                     line.append(vd)
                     verdict[(task, sh, arm)] = vd
                 else:
@@ -102,7 +114,8 @@ def main():
     for task in tasks:
         for sh in shells:
             vs = [verdict.get((task, sh, arm), "—") for arm in arms]
-            robust = ("YES: " + vs[0]) if (len(set(vs)) == 1 and vs[0] in ("heat", "qw")) else "no"
+            robust = ("YES: " + vs[0]) if (len(set(vs)) == 1 and vs[0] in ("heat", "qw")) else \
+                     ("FLOOR" if all(v.startswith("FLOOR") for v in vs if v != "—") and any(v != "—" for v in vs) else "no")
             P(f"| {task} | {sh} | " + " | ".join(vs) + f" | {robust} |")
 
     # learned t, to show reach, per arm

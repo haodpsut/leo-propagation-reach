@@ -87,3 +87,16 @@ CSV kể cả hàng không hợp lệ; số hàng không hợp lệ in cạnh m�
 **Một lệch mã/văn của bài cũ, sửa và khai:** mã chạy `seam=False` trong khi văn bản nói "seam cut".
 Bài mới chạy `seam=True` và nói rõ. Shell 3168 và 4400 là **scale-up tổng hợp** của hình học
 shell-1, không phải chòm thật; bài phải nói vậy.
+
+## ⛔ BỔ SUNG 11/09/2026 14:40, sau 117/960 ô (chỉ s4400 xong), TRƯỚC khi có hàng s3168 nào
+
+Ở s4400 cả ba toán tử nằm trong **0,001** của nhau và cách hằng số **0,0005** (hops: 0,1864 đến
+0,1871 so với 0,187). Quy tắc "thắng = ≥7/10 seed" vẫn cho "heat thắng 9/10" bằng 0,0007 MAE.
+Đó là hiện tượng SÀN: với 200 epoch, ở 4400 không toán tử nào học được gì.
+
+⇒ Bổ sung **cách báo cáo**, không đổi giao thức chạy: một ô chỉ **xếp hạng được** khi toán tử tốt
+nhất cải thiện ≥ **5%** so với hằng số (`FLOOR_GAIN`). Dưới đó in **FLOOR**, không tính là thắng.
+
+⇒ Hệ quả đã thấy trước: nếu s3168 cũng FLOOR thì lưới 200 epoch chỉ xếp hạng được ở 264 và 1584,
+và kết luận "phụ thuộc quy mô" KHÔNG rút ra được từ lưới này. Khi đó đề xuất một **nhánh epoch**
+(600) cho s3168 và s4400, khai riêng trước khi chạy, KHÔNG chèn vào lưới đang chạy.
