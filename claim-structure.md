@@ -119,3 +119,20 @@ relu → hoà (heat 6/10), softplus → qw thắng 7-8/10, phương sai seed ±0
 1584 có tái tạo được ở đúng cấu hình không; (b) tách **dung lượng** khỏi **toán tử**: nếu lưới 2
 học được ở 1584 còn lưới 1 không, thì sàn của lưới 1 là sàn dung lượng, đúng Pitfall 4 của bài cũ.
 Ngân sách 200 epoch giữ nguyên để so được với bài cũ. Nhánh epoch (600) vẫn để sau, khai riêng.
+
+## ⛔ BỔ SUNG 11/09/2026 18:35: nhánh EPOCH, khai sau một ô thử, TRƯỚC khi chạy lưới 3
+
+**Lưới 2 (rộng 32, 4 lớp) ở s4400 vẫn là SÀN** (cải thiện ≤1%) ⇒ sàn không phải sàn dung lượng.
+**Ô thử s1584, cấu hình bài cũ, relu, seed 0:** 200 epoch → heat 0,187 / qw 0,200 (hằng số 0,202);
+**1.000 epoch → heat 0,055 / qw 0,160.** ⇒ Sàn là **sàn ngân sách**: ở quy mô lớn mô hình cần
+nhiều epoch hơn để rời nghiệm hằng số, và "cùng ngân sách ở mọi quy mô" (giao thức của bài cũ
+VÀ của lưới 1-2) là chính cạm bẫy làm mọi so sánh ≥1584 thành so sánh nhiễu.
+
+⇒ **Lưới 3, khai trước:** cấu hình bài cũ (rộng 32, 4 lớp), **1.000 epoch**, shell **s264 · s1584
+· s3168** (bỏ s4400 vì ~8 giờ/nhánh; nếu lưới 3 cho thứ hạng rõ ở 3168 thì mới xét 4400 riêng),
+2 tác vụ, 3 toán tử, 10 seed, **2 nhánh t** (relu 0,5 · softplus 0,5; nhánh t0=2,0 ở lưới 1-2
+không đổi kết luận sàn nên bỏ) = **360 ô**, tệp `results/scale_h32l4e1000_<arm>.csv`. Chạy sau
+khi lưới 2 xong, cùng máy.
+
+Quy tắc đọc không đổi: thắng = trung bình thấp hơn VÀ ≥7/10 seed, chỉ khi ô vượt sàn 5%, và chỉ
+tuyên bố thứ hạng nếu bền qua cả hai nhánh t.
