@@ -100,3 +100,22 @@ nhất cải thiện ≥ **5%** so với hằng số (`FLOOR_GAIN`). Dưới đ�
 ⇒ Hệ quả đã thấy trước: nếu s3168 cũng FLOOR thì lưới 200 epoch chỉ xếp hạng được ở 264 và 1584,
 và kết luận "phụ thuộc quy mô" KHÔNG rút ra được từ lưới này. Khi đó đề xuất một **nhánh epoch**
 (600) cho s3168 và s4400, khai riêng trước khi chạy, KHÔNG chèn vào lưới đang chạy.
+
+## ⛔ BỔ SUNG 11/09/2026 16:20, sau 480/960 ô lưới 1 (rộng 16, 3 lớp), TRƯỚC khi chạy lưới 2
+
+**Phát hiện về hiện vật đã nộp của bản TNSE.** `exp_e_shell1.csv` đã nộp ghi `params=3301`, tức
+mạng **rộng 32, 4 lớp** (2·32+32 + 3·(32·32+32) + 33 + 4 = 3301), khớp văn bản bài ("width 32").
+Nhưng mã phát hành mặc định **rộng 16, 3 lớp** (`params=612`), và **không tồn tại script nào sinh
+Exp E** trong repo, dù CSV của nó có. ⇒ Thí nghiệm headline "edge emerges at scale" của bản cũ
+**không tái tạo được từ hiện vật phát hành**. Lưới 1 của bài này chạy cấu hình *phát hành*, nên
+không tái tạo 0,148 ở 1584 là điều phải xảy ra chứ không phải mâu thuẫn.
+
+**Kết quả lưới 1 (hai nhánh t0=0,5, 480 ô, 0 không hợp lệ):** chỉ **s264 xếp hạng được**
+(cải thiện 18-29% so với hằng số); **từ s1584 trở lên là SÀN** (0,1-2,9%) ở cả hai tác vụ. Ở s264:
+relu → hoà (heat 6/10), softplus → qw thắng 7-8/10, phương sai seed ±0,04.
+
+⇒ **Lưới 2, khai trước:** giống lưới 1 nhưng **rộng 32, 4 lớp** (cấu hình bài cũ, 3301 tham số),
+đủ 4 nhánh t, 960 ô, tệp riêng `results/scale_h32l4_<arm>.csv`. Mục đích: (a) kiểm xem 0,148 ở
+1584 có tái tạo được ở đúng cấu hình không; (b) tách **dung lượng** khỏi **toán tử**: nếu lưới 2
+học được ở 1584 còn lưới 1 không, thì sàn của lưới 1 là sàn dung lượng, đúng Pitfall 4 của bài cũ.
+Ngân sách 200 epoch giữ nguyên để so được với bài cũ. Nhánh epoch (600) vẫn để sau, khai riêng.
