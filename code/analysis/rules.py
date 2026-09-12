@@ -31,6 +31,9 @@ def load(paths):
                 for k in ("mae", "aurc", "const_mae", "t_init", "train_mae"):
                     r[k] = float(r[k])
                 r["seed"] = int(r["seed"])
+                r["const_aurc"] = float(r["const_aurc"]) if r.get("const_aurc") not in (None, "") else float("nan")
+                r["seam"] = r.get("seam") or "keep"; r["dtype"] = r.get("dtype") or "float32"
+                r["ppr_alpha"] = float(r.get("ppr_alpha") or 0.05); r["sgc_k"] = int(r.get("sgc_k") or 8); r["ppr_k"] = int(r.get("ppr_k") or 20)
                 th = json.loads(r["loss_thirds"])
                 finite = r["mae"] == r["mae"] and r["train_mae"] == r["train_mae"]
                 rising = any(th[i + 1] > th[i] * 1.01 for i in range(len(th) - 1))

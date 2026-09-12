@@ -5,8 +5,14 @@ Everything here is ADDITIVE. src/data.py, src/train.py and experiments/exp_*.py 
 artifact of the rejected TNSE submission and are left untouched.
 
 ⚠ Two things the old code/text disagreed on, fixed here and stated in the paper:
-  * make_leo_samples() ran with seam=False while the text said "counter-rotating seam cut".
-    The scale study cuts the seam (seam=True), which is the physically standard +Grid.
+  * ⛔⛔ SEAM (found 12/09/2026 by reading Table 10, review round 2): grid_isl_graph(seam=True)
+    KEEPS the seam links (`if not seam ... continue`), so seam=True is the FULL 4-regular torus.
+    The line that stood here until 12/09 said the opposite, and the paper copied it. Every run
+    of the audit up to draft 3 (2920 rows) is on the torus with NO seam cut; the 70-degree polar
+    cutoff is vacuous at 53-degree inclination. On the hop field a vertex-transitive torus makes
+    every instance one field up to relabelling, which is why train MAE == test MAE to 4 digits.
+    make_samples(seam=...) now means what it says: seam=False cuts, seam=True keeps. The seam-cut
+    robustness arm of round 2 is run with seam=False and reported beside the torus grids.
   * "Starlink shell-1 geometry" is real (72x22). The 3168 and 4400 shells below are scale-ups
     of that geometry (72x44, 100x44), NOT real constellations; the paper must say so.
 """
@@ -64,16 +70,26 @@ class SoftPropGNN(PropGNN):
 PPR_ALPHA, PPR_K, SGC_K = 0.05, 20, 8
 
 
-def ppr_sgc_propagators(gcn_phi):
-    """Dense PPR (alpha, K power iterations) and SGC (A_hat^K) propagators from the GCN step."""
+def ppr_sgc_propagators(gcn_phi, alpha=PPR_ALPHA, k_ppr=PPR_K, k_sgc=SGC_K):
+    """Dense PPR (alpha, K power iterations) and SGC (A_hat^K) propagators from the GCN step.
+
+    Review round 2 (12/09): alpha and K' were fixed by assertion; they are now arguments so the
+    baseline sweep (alpha in 0.05..0.5, K' in 2..16) runs through the same code path.
+    """
     A = gcn_phi
-    ppr = torch.eye(A.shape[0], device=A.device) * PPR_ALPHA
-    P = torch.eye(A.shape[0], device=A.device)
-    for _ in range(PPR_K):
-        P = P @ A
-        ppr = ppr + PPR_ALPHA * ((1 - PPR_ALPHA) ** (_ + 1)) * P
+    I = torch.eye(A.shape[0], device=A.device, dtype=A.dtype)
+    if k_ppr == 0:
+        # exact PPR: alpha (I - (1-alpha) A)^{-1}; the round-1 baseline truncated at K=20 steps,
+        # which caps the reach at ~sqrt(20) lattice hops whatever alpha says (measured 12/09)
+        ppr = alpha * torch.linalg.solve(I - (1 - alpha) * A, I)
+    else:
+        ppr = I * alpha
+        P = I.clone()
+        for _ in range(k_ppr):
+            P = P @ A
+            ppr = ppr + alpha * ((1 - alpha) ** (_ + 1)) * P
     ppr = ppr / ppr.sum(1, keepdim=True)
-    sgc = torch.linalg.matrix_power(A, SGC_K)
+    sgc = torch.linalg.matrix_power(A, k_sgc)
     return {"ppr": ppr, "sgc": sgc}
 
 
@@ -97,8 +113,8 @@ import os
 CACHE_DIR = os.environ.get("LEO_EIG_CACHE", os.path.join(os.path.dirname(__file__), "..", "cache"))
 
 
-def eig_cached(A, key):
-    """Eigendecomposition of L(A), cached on disk as float32.
+def eig_cached(A, key, dtype=np.float32):
+    """Eigendecomposition of L(A), cached on disk as float32 (or float64 for the precision arm).
 
     ⛔ WHY (11/09/2026, measured on the VPS): the same graph A is eigendecomposed 24 times
     (3 ops x 4 t-arms x 2 tasks share A), and two processes fighting over 80 cores for eigh
@@ -107,12 +123,13 @@ def eig_cached(A, key):
     includes a hash of A, so a changed graph can never hit a stale file.
     """
     h = hashlib.sha1(np.packbits(A > 0).tobytes()).hexdigest()[:12]
-    path = os.path.join(CACHE_DIR, f"{key}_{A.shape[0]}_{h}.npz")
+    tag = "" if dtype == np.float32 else "_f64"
+    path = os.path.join(CACHE_DIR, f"{key}_{A.shape[0]}_{h}{tag}.npz")
     if os.path.exists(path):
         z = np.load(path)
         return z["w"], z["U"]
     w, U = eig_sym(laplacian(A, normalized=False))
-    w, U = w.astype(np.float32), U.astype(np.float32)
+    w, U = w.astype(dtype), U.astype(dtype)
     os.makedirs(CACHE_DIR, exist_ok=True)
     tmp = path + f".{os.getpid()}.tmp"
     with open(tmp, "wb") as fh:          # np.savez(str) would append ".npz" to the tmp name
@@ -124,7 +141,7 @@ def eig_cached(A, key):
 class ScaleSample:
     """Snapshot + destination. target='hops' (old task) or 'delay' (propagation delay field)."""
 
-    def __init__(self, A, W, dest, target="hops", eig_key=None):
+    def __init__(self, A, W, dest, target="hops", eig_key=None, dtype=np.float32):
         self.A, self.dest, self.n, self.target = A, dest, A.shape[0], target
         hops = bfs_hops(A, dest)
         self.reachable = np.isfinite(hops)
@@ -147,13 +164,15 @@ class ScaleSample:
         self.X = np.stack([seed, (deg / max(deg.max(), 1.0)).astype(np.float32)], axis=1)
         if eig_key is None:
             w, U = eig_sym(laplacian(A, normalized=False))
-            w, U = w.astype(np.float32), U.astype(np.float32)
+            w, U = w.astype(dtype), U.astype(dtype)
         else:
-            w, U = eig_cached(A, eig_key)
+            w, U = eig_cached(A, eig_key, dtype)
         self.w, self.U = w, U
 
 
-def make_samples(name, n, seed, target="hops", seam=True):
+def make_samples(name, n, seed, target="hops", seam=True, dtype=np.float32):
+    """seam=True KEEPS the seam links (full torus, the setting of every torus grid);
+    seam=False CUTS them (the +Grid with a counter-rotating seam, the round-2 robustness arm)."""
     wk = walker(name)
     rng = np.random.default_rng(seed)
     out = []
@@ -163,12 +182,12 @@ def make_samples(name, n, seed, target="hops", seam=True):
         cc = largest_cc(A)
         A, W = A[np.ix_(cc, cc)], W[np.ix_(cc, cc)]
         out.append(ScaleSample(A, W, int(rng.integers(0, A.shape[0])), target=target,
-                               eig_key=f"{name}_s{seed}_{i}"))
+                               eig_key=f"{name}_s{seed}_{i}" + ("" if seam else "_cut"), dtype=dtype))
     return out
 
 
 def _tensors(s, device):
-    f = lambda a: torch.tensor(a, dtype=torch.float32, device=device)   # noqa: E731
+    f = lambda a: torch.tensor(a, dtype=torch.get_default_dtype(), device=device)   # noqa: E731
     return f(s.X), f(s.w), f(s.U), f(s.y), f(gcn_propagator(s.A))
 
 
@@ -181,14 +200,15 @@ MIN_LOSS_DROP = 0.10     # first-third -> last-third loss must fall by >=10%
 
 
 def train_eval_logged(op, train_s, eval_s, hidden=16, n_layers=3, epochs=200, lr=0.01,
-                      seed=0, device="cpu", t_param="softplus", t_init=0.5):
+                      seed=0, device="cpu", t_param="softplus", t_init=0.5,
+                      ppr_alpha=PPR_ALPHA, sgc_k=SGC_K, ppr_k=PPR_K):
     np.random.seed(seed)
     torch.manual_seed(seed)
     model = SoftPropGNN(in_dim=2, hidden=hidden, out_dim=1, n_layers=n_layers, op_kind=op,
                         t_param=t_param, t_init=t_init).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=lr)
     cache = [_tensors(s, device) for s in train_s]
-    fixed = [ppr_sgc_propagators(g)[op] if op in ("ppr", "sgc") else None for (_, _, _, _, g) in cache]
+    fixed = [ppr_sgc_propagators(g, ppr_alpha, ppr_k, sgc_k)[op] if op in ("ppr", "sgc") else None for (_, _, _, _, g) in cache]
     hist = []
     for ep in range(epochs):
         model.train()
@@ -206,7 +226,7 @@ def train_eval_logged(op, train_s, eval_s, hidden=16, n_layers=3, epochs=200, lr
         maes, aurcs = [], []
         for s in eval_s:
             X, w, U, y, g = _tensors(s, device)
-            fp = ppr_sgc_propagators(g)[op] if op in ("ppr", "sgc") else None
+            fp = ppr_sgc_propagators(g, ppr_alpha, ppr_k, sgc_k)[op] if op in ("ppr", "sgc") else None
             p = model(X, w, U, g, fp).cpu().numpy()
             maes.append(mae(p, s.y))
             aurcs.append(far_node_aurc(p, s.y, s.hops, s.ecc))
@@ -217,10 +237,12 @@ def train_eval_logged(op, train_s, eval_s, hidden=16, n_layers=3, epochs=200, lr
     dropped = finite and thirds[0] > 0 and (thirds[0] - thirds[2]) / thirds[0] >= MIN_LOSS_DROP
     valid = bool(finite and monotone and dropped)
     const_mae = float(np.mean([mae(np.full(s.n, s.y.mean(), np.float32), s.y) for s in eval_s]))
+    # review round 2: rule 1 needs the constant predictor on the far-node metric too
+    const_aurc = float(np.nanmean([far_node_aurc(np.full(s.n, s.y.mean(), np.float32), s.y, s.hops, s.ecc) for s in eval_s]))
     t_learned = model.times().detach().cpu().numpy().ravel().tolist() if op in ("heat", "qw") else []
     return {
         "op": op, "mae": float(np.mean(maes)), "aurc": float(np.nanmean(aurcs)),
-        "train_mae": tr_mae, "const_mae": const_mae,
+        "train_mae": tr_mae, "const_mae": const_mae, "const_aurc": const_aurc,
         "beats_const": bool(np.mean(maes) < const_mae),
         "loss_thirds": thirds, "monotone": bool(monotone),
         "valid": valid, "t_learned": t_learned, "t_param": t_param, "t_init": t_init,

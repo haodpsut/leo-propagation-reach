@@ -26,23 +26,32 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 FIELDS = ["task", "shell", "seed", "op", "t_param", "t_init", "n_nodes", "mae", "aurc", "train_mae",
           "const_mae", "beats_const", "valid",
           "monotone", "loss_thirds", "t_learned", "params", "epochs", "n_train", "n_eval",
-          "hidden", "n_layers", "secs", "device"]
+          "hidden", "n_layers", "secs", "device",
+          # review round 2 (12/09): robustness/sweep arms; absent in older CSVs -> defaults
+          "seam", "ppr_alpha", "sgc_k", "dtype", "const_aurc", "ppr_k"]
 
 
 def cell(args):
     task, shell, seed, op, cfg = args
+    import numpy as np
     import torch
     torch.set_num_threads(1)
+    if cfg["dtype"] == "float64":
+        torch.set_default_dtype(torch.float64)
+    npdt = np.float64 if cfg["dtype"] == "float64" else np.float32
     from src.scale import make_samples, train_eval_logged
     t0 = time.time()
-    tr = make_samples(shell, cfg["n_train"], seed=1000 + seed, target=task)
-    ev = make_samples(shell, cfg["n_eval"], seed=2000 + seed, target=task)
+    keep = cfg["seam"] == "keep"
+    tr = make_samples(shell, cfg["n_train"], seed=1000 + seed, target=task, seam=keep, dtype=npdt)
+    ev = make_samples(shell, cfg["n_eval"], seed=2000 + seed, target=task, seam=keep, dtype=npdt)
     r = train_eval_logged(op, tr, ev, hidden=cfg["hidden"], n_layers=cfg["n_layers"],
                           epochs=cfg["epochs"], seed=seed, device=cfg["device"],
-                          t_param=cfg["t_param"], t_init=cfg["t_init"])
+                          t_param=cfg["t_param"], t_init=cfg["t_init"],
+                          ppr_alpha=cfg["ppr_alpha"], sgc_k=cfg["sgc_k"], ppr_k=cfg["ppr_k"])
     r.update(task=task, shell=shell, seed=seed, epochs=cfg["epochs"], n_train=cfg["n_train"],
              n_eval=cfg["n_eval"], hidden=cfg["hidden"], n_layers=cfg["n_layers"],
-             secs=round(time.time() - t0, 1), device=cfg["device"])
+             secs=round(time.time() - t0, 1), device=cfg["device"],
+             seam=cfg["seam"], ppr_alpha=cfg["ppr_alpha"], sgc_k=cfg["sgc_k"], dtype=cfg["dtype"], ppr_k=cfg["ppr_k"])
     r["loss_thirds"] = json.dumps([round(x, 5) for x in r["loss_thirds"]])
     r["t_learned"] = json.dumps([round(x, 4) for x in r["t_learned"]])
     return r
@@ -52,7 +61,8 @@ def done_keys(path):
     if not os.path.exists(path):
         return set()
     with open(path) as f:
-        return {(r["task"], r["shell"], int(r["seed"]), r["op"], r["t_param"], float(r["t_init"]))
+        return {(r["task"], r["shell"], int(r["seed"]), r["op"], r["t_param"], float(r["t_init"]),
+                 r.get("seam", "keep"), float(r.get("ppr_alpha", 0.05)), int(r.get("sgc_k", 8)), r.get("dtype", "float32"), int(r.get("ppr_k") or 20))
                 for r in csv.DictReader(f)}
 
 
@@ -71,15 +81,22 @@ def main():
     ap.add_argument("--t-param", default="softplus", choices=["softplus", "relu"],
                     help="relu = old parameterisation (control arm); softplus = fixed")
     ap.add_argument("--t-init", type=float, default=0.5, help="initial propagation time (arm)")
+    ap.add_argument("--seam", default="keep", choices=["keep", "cut"],
+                    help="keep = full torus (every grid up to draft 3); cut = counter-rotating seam cut")
+    ap.add_argument("--ppr-alpha", type=float, default=0.05)
+    ap.add_argument("--sgc-k", type=int, default=8)
+    ap.add_argument("--ppr-k", type=int, default=20, help="power-iteration steps for PPR; 0 = exact inverse")
+    ap.add_argument("--dtype", default="float32", choices=["float32", "float64"])
     ap.add_argument("--workers", type=int, default=1)
     ap.add_argument("--out", default="results/scale.csv")
     a = ap.parse_args()
     cfg = dict(n_train=a.n_train, n_eval=a.n_eval, epochs=a.epochs, hidden=a.hidden,
-               n_layers=a.n_layers, device=a.device, t_param=a.t_param, t_init=a.t_init)
+               n_layers=a.n_layers, device=a.device, t_param=a.t_param, t_init=a.t_init,
+               seam=a.seam, ppr_alpha=a.ppr_alpha, sgc_k=a.sgc_k, dtype=a.dtype, ppr_k=a.ppr_k)
     grid = list(itertools.product(a.tasks.split(","), a.shells.split(","),
                                   [int(s) for s in a.seeds.split(",")], a.ops.split(",")))
     have = done_keys(a.out)
-    todo = [g for g in grid if (g + (a.t_param, float(a.t_init))) not in have]
+    todo = [g for g in grid if (g + (a.t_param, float(a.t_init), a.seam, float(a.ppr_alpha), int(a.sgc_k), a.dtype, int(a.ppr_k))) not in have]
     print(f"[scale] {len(grid)} cells, {len(have)} done, {len(todo)} to run, workers={a.workers}, "
           f"device={a.device}", flush=True)
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
@@ -88,7 +105,7 @@ def main():
     order = {"s4400": 0, "s3168": 1, "s1584": 2, "s264": 3}
     todo.sort(key=lambda g: order.get(g[1], 9))
     with open(a.out, "a", newline="") as f:
-        wr = csv.DictWriter(f, fieldnames=FIELDS)
+        wr = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
         if new:
             wr.writeheader()
         n_ok = n_bad = 0
