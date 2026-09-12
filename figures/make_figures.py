@@ -163,7 +163,17 @@ for ax, cfg in zip(axes, CFGS):
 axes[0].set_ylabel("best-operator gain over constant (%)")
 axes[0].legend(loc="upper right")
 save(fig, "fig1-floor")
-M("numFloorCellsLarge", n_floor); M("numRankableCellsLarge", n_rank)   # o >=1584, hops, 2 cfg x 4 arm x 3 shell = 24
+M("numFloorCellsLarge", n_floor); M("numRankableCellsLarge", n_rank)
+M("numGridTwelvePlateau", sum(1 for r in g12 if not r["pathology"] and r["mae"] >= 0.98 * r["const_mae"] and r["shell"] != "s264"))
+# do lech lon nhat giua ba toan tu (trung binh) o s4400, moi cfg/nhanh/tac vu: cho cau "within X of each other"
+spread = []
+for cfg in CFGS:
+    for arm in ARMS:
+        for task in ("hops", "delay"):
+            st = summarise(cell(g12, task, "s4400", arm, cfg, 200))[0]
+            mus = [v[0] for v in st.values()]
+            if len(mus) == 3: spread.append(max(mus) - min(mus))
+M("numLargeSpreadMax", "%.3f" % max(spread))   # o >=1584, hops, 2 cfg x 4 arm x 3 shell = 24
 
 # gain o s264 theo cfg (min..max qua 4 nhanh, hops) va o >=1584 (max)
 for cfg in CFGS:
@@ -192,22 +202,35 @@ save(fig, "fig2-s264-arms")
 M("numSTwoSixFourVerdicts", " / ".join(verd))
 M("numSTwoSixFourRobust", "yes" if len(set(verd)) == 1 and verd[0] in ("heat", "qw") else "no")
 
-# --- Hinh 3: t hoc duoc theo quy mo (h32l4, softplus 0.5, hops): moi lop mot duong, heat va qw
-fig, ax = plt.subplots(figsize=(W_HALF, 2.2))
-for op in ("heat", "qw"):
-    tl = []
-    for sh in SHELLS:
-        c = cell(g12, "hops", sh, "softplus/t0=0.5", "h32l4", 200)
-        ts = np.array([r["t_learned"] for r in c.get(op, {}).values()])
-        tl.append(ts.mean(0) if len(ts) else np.full(4, np.nan))
-    tl = np.array(tl)
-    for l in range(tl.shape[1]):
-        ax.plot([NN[s] for s in SHELLS], tl[:, l], color=C[op], ls=LS[op], marker=MK[op], ms=3,
-                alpha=0.35 + 0.65 * l / 3, label=LBL[op] if l == 0 else None)
-ax.set_xscale("log"); ax.set_xticks([264, 1584, 3168, 4400]); ax.set_xticklabels(["264", "1584", "3168", "4400"], rotation=30); ax.minorticks_off()
-ax.set_xlabel("satellites in shell"); ax.set_ylabel("learned $t$ (4 layers, 200 epochs)")
-ax.legend()
-save(fig, "fig3-t-learned", W_HALF)
+# --- Hinh 3: t hoc duoc theo quy mo, hai panel: 200 epoch (luoi 1-2) va 1000 epoch (luoi 3), h32l4, softplus 0.5, hops
+def tl_panel(ax, rows, epochs, shells):
+    for op in ("heat", "qw"):
+        tl = []
+        for sh in shells:
+            c = cell(rows, "hops", sh, "softplus/t0=0.5", "h32l4", epochs)
+            ts = np.array([r["t_learned"] for r in c.get(op, {}).values()])
+            tl.append(ts.mean(0) if len(ts) else np.full(4, np.nan))
+        tl = np.array(tl)
+        for l in range(tl.shape[1]):
+            ax.plot(range(len(shells)), tl[:, l], color=C[op], ls=LS[op], marker=MK[op], ms=3,
+                    alpha=0.35 + 0.65 * l / 3, label=LBL[op] if l == 0 else None)
+    ax.set_xticks(range(len(shells))); ax.set_xticklabels([str(NN[s]) for s in shells])
+    ax.set_xlabel("satellites in shell"); ax.set_title("%d epochs" % epochs, fontsize=8)
+
+fig, axes = plt.subplots(1, 2, figsize=(W_WIDE, 2.3))
+tl_panel(axes[0], g12, 200, SHELLS)
+g3_early = load_grid("grid3/scale_h32l4e1000_*.csv")
+if g3_early:
+    tl_panel(axes[1], g3_early, 1000, SHELLS[:3])
+axes[0].set_ylabel("learned $t$ per layer")
+axes[0].legend(fontsize=7)
+save(fig, "fig3-t-learned", W_WIDE)
+if g3_early:
+    for sh in SHELLS[:3]:
+        for op in ("heat", "qw"):
+            c = cell(g3_early, "hops", sh, "softplus/t0=0.5", "h32l4", 1000)
+            ts = np.array([r["t_learned"] for r in c.get(op, {}).values()])
+            M("numTlayerOne" + SHNAME[sh] + ("Heat" if op == "heat" else "Walk"), "%.1f" % ts.mean(0)[0])
 
 # ================================================================ LUOI 3 (neu co)
 g3 = load_grid("grid3/scale_h32l4e1000_*.csv")
@@ -246,6 +269,142 @@ if g3:
               "yes" if len(set(vs)) == 1 and vs[0] in ("heat", "qw") else "no")
 else:
     print("  grid3: chua co (bo qua fig4 va macro G3)")
+
+# ================================================================ hien vat ban so bo (06/2026), doc tu CSV da nop
+PRE = os.path.join(ROOT, "code", "results-as-submitted-2026-06-28")
+if os.path.exists(os.path.join(PRE, "exp_e_shell1.csv")):
+    pre = {r["op"]: r for r in csv.DictReader(open(os.path.join(PRE, "exp_e_shell1.csv")))}
+    M("numPrelimWalkMAE", "%.3f" % float(pre["qw"]["mae_mean"]))
+    M("numPrelimHeatMAE", "%.3f" % float(pre["heat"]["mae_mean"]))
+    M("numPrelimParams", int(float(pre["qw"]["params"])))
+    n_seeds = len(list(csv.DictReader(open(os.path.join(PRE, "exp_e_shell1_perseed.csv"))))) // 3
+    M("numPrelimSeeds", n_seeds)
+    # params cua cau hinh ma phat hanh (hidden 16, 3 lop) tu luoi 1
+    M("numReleasedParams", int(next(r for r in g12 if r["cfg"] == "h16l3")["params"]))
+    M("numSubmittedParams", int(next(r for r in g12 if r["cfg"] == "h32l4")["params"]))
+
+# ================================================================ bang shell, doc tu code/src/scale.py (khong go tay)
+sys.path.insert(0, os.path.join(ROOT, "code"))
+from src.scale import SHELLS as _SH                                   # noqa: E402
+T = ["% GENERATED by figures/make_figures.py from code/src/scale.py::SHELLS\n\\begin{tabular}{@{}rrrrrl@{}}\n\\toprule\n"
+     "satellites & planes & per plane & incl.\\ ($^{\\circ}$) & alt.\\ (km) & note \\\\\n\\midrule"]
+NOTE = {"s264": "main scale of the preliminary version", "s1584": "Starlink shell-1 geometry~\\cite{starlink}",
+        "s3168": "scale-up, synthetic", "s4400": "scale-up, synthetic"}
+for k in SHELLS:
+    tot, planes, f, inc, alt, _ = _SH[k]
+    T.append("%d & %d & %d & %g & %g & %s \\\\" % (tot, planes, tot // planes, inc, alt, NOTE[k]))
+T.append("\\bottomrule\n\\end{tabular}")
+io.open(os.path.join(OUTD, "tab0-shells.tex"), "w").write("\n".join(T) + "\n")
+M("numShellIncl", "%g" % _SH["s1584"][3]); M("numShellAlt", "%g" % _SH["s1584"][4])
+
+# ================================================================ bang LaTeX
+def fmt(st, op):
+    return "%.3f $\\pm$ %.3f (%d)" % (st[op][0], st[op][1], st[op][2]) if op in st else "---"
+
+T = []
+# Bang 1: luoi 1-2, tac vu hops: cai thien cua toan tu tot nhat so voi hang so, theo cfg x nhanh x shell
+T.append("% GENERATED by figures/make_figures.py\n\\begin{tabular}{@{}llrrrr@{}}\n\\toprule\n"
+         "config & $t$ arm & 264 & 1584 & 3168 & 4400 \\\\\n\\midrule")
+for cfg in CFGS:
+    for arm in ARMS:
+        cells = [summarise(cell(g12, "hops", sh, arm, cfg, 200)) for sh in SHELLS]
+        row = " & ".join(("%.1f" % (100 * g)) + ("" if vd != "floor" else "$^{\\dagger}$") for (_, _, g, vd) in cells)
+        T.append("%s & %s & %s \\\\" % (CFGNAME[cfg].lower(), arm.replace("/t0=", ", $t_0{=}$"), row))
+T.append("\\bottomrule\n\\end{tabular}")
+io.open(os.path.join(OUTD, "tab1-floor.tex"), "w").write("\n".join(T) + "\n")
+
+if g3:
+    T = ["% GENERATED by figures/make_figures.py\n\\begin{tabular}{@{}llrllrl@{}}\n\\toprule\n"
+         "task & shell & GCN & heat $e^{-tL}$ & walk $|e^{-itL}|^2$ & seeds heat:walk & verdict \\\\\n\\midrule"]
+    for task in ("hops", "delay"):
+        for arm in ARMS3:
+            T.append("\\multicolumn{7}{@{}l}{\\emph{%s field, %s}} \\\\" % (task, arm.replace("/t0=", ", $t_0{=}$")))
+            for sh in SHELLS[:3]:
+                c = cell(g3, task, sh, arm, "h32l4", 1000)
+                st, cm, gain, vd = summarise(c)
+                common = sorted(set(c.get("heat", {})) & set(c.get("qw", {})))
+                hw = sum(c["heat"][s]["mae"] < c["qw"][s]["mae"] for s in common) if common else 0
+                qw = len(common) - hw
+                gcn = "%.3f" % st["gcn"][0] if "gcn" in st else "---"
+                T.append("& %d & %s & %s & %s & %d:%d & %s \\\\" % (NN[sh], gcn, fmt(st, "heat"), fmt(st, "qw"), hw, qw, vd.replace("<", "$<$")))
+    T.append("\\bottomrule\n\\end{tabular}")
+    io.open(os.path.join(OUTD, "tab2-grid3.tex"), "w").write("\n".join(T) + "\n")
+    # so hang benh ly va plateau cua luoi 3, cho van xuoi
+    M("numGridThreePlateau", sum(1 for r in g3 if not r["pathology"] and r["mae"] >= 0.98 * r["const_mae"]))
+    # ty le benh ly
+    M("numGridThreePathologyPct", round(100.0 * sum(r["pathology"] for r in g3) / len(g3), 1))
+    # heat vs qw o s264 softplus (cho abstract)
+    st, cm, gain, vd = summarise(cell(g3, "hops", "s264", "softplus/t0=0.5", "h32l4", 1000))
+    M("numGthreeHopsSmallHeat", "%.3f" % st["heat"][0]); M("numGthreeHopsSmallHeatSd", "%.3f" % st["heat"][1])
+    M("numGthreeHopsSmallWalk", "%.3f" % st["qw"][0]); M("numGthreeHopsSmallWalkSd", "%.3f" % st["qw"][1])
+    M("numGthreeHopsSmallConst", "%.3f" % cm)
+    # so o quyet dinh duoc / tong, va so o heat thang ben
+    cells3 = [(t, sh) for t in ("hops", "delay") for sh in SHELLS[:3]]
+    rob = [NUM["numGthree" + t.capitalize() + SHNAME[sh] + "Robust"] for t, sh in cells3]
+    M("numGthreeCells", len(cells3)); M("numGthreeHeatRobust", sum(r == "yes" for r in rob))
+    M("numGthreeWalkRobust", sum(1 for t, sh in cells3 if NUM["numGthree" + t.capitalize() + SHNAME[sh] + "Verdict"] == "qw / qw"))
+    # khoang cai thien so voi hang so o luoi 3, theo tac vu (cho van xuoi)
+    for task in ("hops", "delay"):
+        gs = [summarise(cell(g3, task, sh, a, "h32l4", 1000))[2] for a in ARMS3 for sh in SHELLS[:3]]
+        M("numGthree" + task.capitalize() + "GainMin", round(100 * min(gs))); M("numGthree" + task.capitalize() + "GainMax", round(100 * max(gs)))
+    for sh in SHELLS[:3]:
+        gs = []
+        for arm in ARMS3:
+            st, cm, gain, vd = summarise(cell(g3, "hops", sh, arm, "h32l4", 1000))
+            gs.append(100 * (cm - st["gcn"][0]) / cm)
+        M("numGthreeGcnGain" + SHNAME[sh], round(max(gs), 1))
+    # muc tang loss lon nhat trong cac ca benh ly
+    rises = [max((th[i + 1] - th[i]) / th[i] for i in range(2)) for th in
+             (json.loads(r["loss_thirds"]) for r in g3) if any(th[i + 1] > th[i] * 1.01 for i in range(2))]
+    M("numGridThreeRiseMaxPct", round(100 * max(rises)))
+print("  bang -> figures/out/tab*.tex")
+
+# ================================================================ bang tom tat headline (tu chinh cac macro)
+if g3:
+    T = ["% GENERATED by figures/make_figures.py\n\\begin{tabular}{@{}p{0.52\\textwidth}lp{0.19\\textwidth}@{}}\n\\toprule\n"
+         "finding & value & derived in \\\\\n\\midrule",
+         "runs, fixed 200-epoch budget (grid 1) & %d & Sec.~\\ref{sec:floor} \\\\" % NUM["numGridTwelveRuns"],
+         "largest gain over constant on any shell $\\geq$1584, any arm (grid 1) & %s\\%% & Fig.~\\ref{fig:floor}, Tab.~\\ref{tab:floor} \\\\" % max(NUM["numGainLargeMaxReleased"], NUM["numGainLargeMaxSubmitted"]),
+         "rankable cells at $\\geq$1584 satellites, hop field (grid 1) & %d of %d & Tab.~\\ref{tab:floor} \\\\" % (NUM["numRankableCellsLarge"], NUM["numRankableCellsLarge"] + NUM["numFloorCellsLarge"]),
+         "heat-vs-walk verdicts at 264 satellites across the four $t$ arms (grid 1) & %s & Fig.~\\ref{fig:arms} \\\\" % NUM["numSTwoSixFourVerdicts"],
+         "runs, 1000-epoch budget (grid 2) & %d & Sec.~\\ref{sec:budget} \\\\" % NUM["numGridThreeRuns"],
+         "task-scale cells where heat wins in every arm (grid 2) & %d of %d & Tab.~\\ref{tab:grid3} \\\\" % (NUM["numGthreeHeatRobust"], NUM["numGthreeCells"]),
+         "task-scale cells where walk wins in every arm (grid 2) & %d of %d & Tab.~\\ref{tab:grid3} \\\\" % (NUM["numGthreeWalkRobust"], NUM["numGthreeCells"]),
+         "runs collapsing to the constant solution under long training (grid 2) & %d (%s\\%%) & Sec.~\\ref{sec:collapse} \\\\" % (NUM["numGridThreePathology"], NUM["numGridThreePathologyPct"]),
+         "preliminary 1584-satellite result, walk vs heat, %d seeds & %s vs %s & Sec.~\\ref{sec:budget} \\\\" % (NUM["numPrelimSeeds"], NUM["numPrelimWalkMAE"], NUM["numPrelimHeatMAE"]),
+         "\\bottomrule\n\\end{tabular}"]
+    io.open(os.path.join(OUTD, "tab-summary.tex"), "w").write("\n".join(T) + "\n")
+
+# ================================================================ hinh luong giao thuc (TikZ), so lay tu ma
+shells_txt = " $\\cdot$ ".join(str(_SH[k][0]) for k in SHELLS)
+proto = r"""% GENERATED by figures/make_figures.py (shell sizes from code/src/scale.py, params from results)
+\begin{tikzpicture}[
+  font=\footnotesize, node distance=2.5mm and 2.6mm,
+  box/.style={draw, rounded corners=1pt, align=center, inner sep=2pt, minimum height=6.5mm},
+  arm/.style={box, fill=black!4},
+  rule/.style={box, fill=black!10, minimum width=13.5mm},
+  >={Stealth[length=1.8mm]}]
+\node[arm] (ops) {3 operators\\GCN $\cdot$ $e^{-t\Lap}$ $\cdot$ $|e^{-it\Lap}|^{2}$};
+\node[arm, right=of ops] (shells) {4 shells\\SHELLS};
+\node[arm, right=of shells] (tasks) {2 tasks\\hop $\cdot$ delay};
+\node[arm, right=of tasks] (seeds) {10 seeds\\per cell};
+\node[arm, below=of ops] (tp) {$t$ parameterisation\\relu $\cdot$ softplus};
+\node[arm, below=of shells] (t0) {$t_{0}$\\0.5 $\cdot$ 2};
+\node[arm, below=of tasks] (cap) {capacity\\PREL $\cdot$ PSUB};
+\node[arm, below=of seeds] (ep) {budget\\200 $\cdot$ 1000 ep.};
+\node[draw, dashed, inner sep=1.8mm, fit=(ops)(seeds)(tp)(ep)] (grid) {};
+\node[anchor=south west, font=\footnotesize] at (grid.north west) {grid 1: 200 epochs, all arms $\cdot$ grid 2: 1000 epochs, submitted capacity};
+\node[rule, below=6mm of grid.south, anchor=north] (r3) {3. floor\\$g<0.05$};
+\node[rule, left=of r3] (r2) {2. pathology\\excluded, counted};
+\node[rule, left=of r2] (r1) {1. constant\\baseline};
+\node[rule, right=of r3] (r4) {4. winner\\eq.~\eqref{eq:win}};
+\node[rule, right=of r4] (r5) {5. robust\\every arm};
+\draw[->] (grid.south) -- (r3.north);
+\draw[->] (r1) -- (r2); \draw[->] (r2) -- (r3); \draw[->] (r3) -- (r4); \draw[->] (r4) -- (r5);
+\end{tikzpicture}
+"""
+proto = proto.replace("SHELLS", shells_txt).replace("PREL", str(NUM["numReleasedParams"])).replace("PSUB", str(NUM["numSubmittedParams"]))
+io.open(os.path.join(OUTD, "fig-protocol.tex"), "w").write(proto)
 
 # ================================================================ macro
 with io.open(os.path.join(OUTD, "numbers.tex"), "w", encoding="utf-8") as fh:
