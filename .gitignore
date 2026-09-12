@@ -1,9 +1,12 @@
 __pycache__/
 *.pyc
 .DS_Store
-results/*.csv
-!results/.keep
-paper/*.pdf
+code/cache/
 paper/*.aux
 paper/*.log
-cache/
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
