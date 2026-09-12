@@ -60,7 +60,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--shells", default="s264,s1584,s3168,s4400")
     ap.add_argument("--tasks", default="hops,delay")
-    ap.add_argument("--ops", default="gcn,heat,qw")
+    ap.add_argument("--ops", default="gcn,heat,qw", help="gcn,heat,qw | ppr,sgc (reach-matched, no t)")
     ap.add_argument("--seeds", default="0,1,2,3,4,5,6,7,8,9")
     ap.add_argument("--n-train", type=int, default=8)
     ap.add_argument("--n-eval", type=int, default=6)

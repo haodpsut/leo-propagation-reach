@@ -45,13 +45,36 @@ class SoftPropGNN(PropGNN):
     def times(self):
         return torch.nn.functional.softplus(self.t) if self.t_param == "softplus" else self.t
 
-    def forward(self, X, w, U, gcn_phi):
+    def forward(self, X, w, U, gcn_phi, fixed_phi=None):
         T = self.times()
         H = X
         for l in range(self.n_layers):
-            Phi = build_propagator(self.op_kind, w, U, T[l, 0], gcn_phi)
+            if self.op_kind in ("ppr", "sgc"):
+                # ⛔ Review 12/09 (G6X, vong 1): "spectral operator" bi lan voi "longer reach" vi GCN
+                #    chi voi 1 hop/lop. Hai baseline TACH ROI lan truyen khoi bien doi, tam voi co
+                #    dinh, KHONG co t hoc, cung MLP: PPR/APPNP (Gasteiger 2019) va SGC luy thua
+                #    (Wu 2019). Phi duoc dung mot lan moi instance (xem ppr_sgc_propagators).
+                Phi = fixed_phi
+            else:
+                Phi = build_propagator(self.op_kind, w, U, T[l, 0], gcn_phi)
             H = self.act(self.lins[l](Phi @ H))
         return self.readout(H).squeeze(-1)
+
+
+PPR_ALPHA, PPR_K, SGC_K = 0.05, 20, 8
+
+
+def ppr_sgc_propagators(gcn_phi):
+    """Dense PPR (alpha, K power iterations) and SGC (A_hat^K) propagators from the GCN step."""
+    A = gcn_phi
+    ppr = torch.eye(A.shape[0], device=A.device) * PPR_ALPHA
+    P = torch.eye(A.shape[0], device=A.device)
+    for _ in range(PPR_K):
+        P = P @ A
+        ppr = ppr + PPR_ALPHA * ((1 - PPR_ALPHA) ** (_ + 1)) * P
+    ppr = ppr / ppr.sum(1, keepdim=True)
+    sgc = torch.linalg.matrix_power(A, SGC_K)
+    return {"ppr": ppr, "sgc": sgc}
 
 
 SHELLS = {
@@ -165,11 +188,12 @@ def train_eval_logged(op, train_s, eval_s, hidden=16, n_layers=3, epochs=200, lr
                         t_param=t_param, t_init=t_init).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=lr)
     cache = [_tensors(s, device) for s in train_s]
+    fixed = [ppr_sgc_propagators(g)[op] if op in ("ppr", "sgc") else None for (_, _, _, _, g) in cache]
     hist = []
     for ep in range(epochs):
         model.train()
         opt.zero_grad()
-        loss = sum(torch.nn.functional.mse_loss(model(X, w, U, g), y) for X, w, U, y, g in cache)
+        loss = sum(torch.nn.functional.mse_loss(model(X, w, U, g, fp), y) for (X, w, U, y, g), fp in zip(cache, fixed))
         loss = loss / len(cache)
         loss.backward()
         opt.step()
@@ -177,12 +201,13 @@ def train_eval_logged(op, train_s, eval_s, hidden=16, n_layers=3, epochs=200, lr
     # train MAE at the end, for the validity gate
     model.eval()
     with torch.no_grad():
-        tr_mae = float(np.mean([mae(model(X, w, U, g).cpu().numpy(), y.cpu().numpy())
-                                for X, w, U, y, g in cache]))
+        tr_mae = float(np.mean([mae(model(X, w, U, g, fp).cpu().numpy(), y.cpu().numpy())
+                                for (X, w, U, y, g), fp in zip(cache, fixed)]))
         maes, aurcs = [], []
         for s in eval_s:
             X, w, U, y, g = _tensors(s, device)
-            p = model(X, w, U, g).cpu().numpy()
+            fp = ppr_sgc_propagators(g)[op] if op in ("ppr", "sgc") else None
+            p = model(X, w, U, g, fp).cpu().numpy()
             maes.append(mae(p, s.y))
             aurcs.append(far_node_aurc(p, s.y, s.hops, s.ecc))
     k = max(len(hist) // 3, 1)
@@ -192,7 +217,7 @@ def train_eval_logged(op, train_s, eval_s, hidden=16, n_layers=3, epochs=200, lr
     dropped = finite and thirds[0] > 0 and (thirds[0] - thirds[2]) / thirds[0] >= MIN_LOSS_DROP
     valid = bool(finite and monotone and dropped)
     const_mae = float(np.mean([mae(np.full(s.n, s.y.mean(), np.float32), s.y) for s in eval_s]))
-    t_learned = model.times().detach().cpu().numpy().ravel().tolist() if op != "gcn" else []
+    t_learned = model.times().detach().cpu().numpy().ravel().tolist() if op in ("heat", "qw") else []
     return {
         "op": op, "mae": float(np.mean(maes)), "aurc": float(np.nanmean(aurcs)),
         "train_mae": tr_mae, "const_mae": const_mae,
