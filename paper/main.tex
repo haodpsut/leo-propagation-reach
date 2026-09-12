@@ -424,7 +424,7 @@ draft never computed.
   first completed cells, all on the 4400-satellite shell, showed the three operators' means
   within \numLargeSpreadMax{} of one another and of the constant baseline while the majority rule
   below still declared a winner. Because the value was set with that knowledge, every statement
-  that depends on it is repeated at $g\in\{0.01, 0.02, 0.05, 0.10\}$ in Table~\ref{tab:sens}.
+  that depends on it is repeated at $g\in\{0.01, 0.02, 0.05, 0.10\}$ in Section~\ref{sec:sens}.
 \item \textbf{Seed majority.} Within a rankable cell, with $S$ the set of seeds valid for both
   spectral operators and $e_{\mathrm{op},s}$ the MAE of seed $s$, the heat kernel wins the
   majority if
@@ -492,7 +492,7 @@ capacity; on the delay field it is between \numGainDelaySmallMinReleased\% and
 \numGainDelaySmallMaxSubmitted\%. On every larger shell it never exceeds \numGainLargeMax\%, in any
 of the eight capacity-by-arm combinations, on either task. Of the \numFloorCellsLarge{} hop-field
 cells at 1584 satellites and above, \numRankableCellsLarge{} are rankable at the declared 5\% floor;
-Table~\ref{tab:sens} (Section~\ref{sec:sens}) shows that \numRankableLargeAtGTwo{} become rankable at a 2\% floor and
+Section~\ref{sec:sens} shows that \numRankableLargeAtGTwo{} become rankable at a 2\% floor and
 \numRankableLargeAtGOne{} at 1\%, all at 1584 satellites, and Table~\ref{tab:above} lists the
 \numGridTwelveAbove{} of \numGridTwelveLargeRuns{} valid large-shell runs that end more than 2\%
 below the constant predictor: they concentrate at 1584 satellites, the walk kernel contributes
@@ -624,13 +624,6 @@ offset horizontally within each shell for legibility.}
 \label{fig:scale}
 \end{figure}
 
-\begin{table}[t]
-\centering
-\caption{Learned propagation time per layer at 1000 epochs, hop field, submitted capacity,
-softplus arm with $t_{0}=0.5$, mean over valid seeds.}
-\label{tab:tlearned}
-\input{../figures/out/tab7-tlearned.tex}
-\end{table}
 
 \begin{table}[t]
 \centering
@@ -644,6 +637,14 @@ too few valid seed pairs for that rule.}
 
 \begin{table}[t]
 \centering
+\caption{Learned propagation time per layer at 1000 epochs, hop field, submitted capacity,
+softplus arm with $t_{0}=0.5$, mean over valid seeds.}
+\label{tab:tlearned}
+\input{../figures/out/tab7-tlearned.tex}
+\end{table}
+
+\begin{table}[t]
+\centering
 \caption{Grid 2, MAE: paired inference across seeds for each arm-level cell. Mean of the
 per-seed difference $e_{\mathrm{heat}}-e_{\mathrm{walk}}$ (negative favours the heat kernel) with
 95\% bootstrap interval, exact two-sided sign-test $p$, exact two-sided Wilcoxon signed-rank
@@ -651,6 +652,7 @@ $p$, and the Wilcoxon $p$ Holm-corrected over the \numGthreeArmCells{} cells.}
 \label{tab:grid3inf}
 \input{../figures/out/tab2b-grid3-inference.tex}
 \end{table}
+
 
 Figure~\ref{fig:scale} and Tables~\ref{tab:grid3} and~\ref{tab:grid3inf} give the comparison.
 Read by the majority rule~\eqref{eq:win} of the preliminary protocol, the heat kernel wins in every arm at
