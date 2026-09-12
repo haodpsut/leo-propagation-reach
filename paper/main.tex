@@ -645,10 +645,12 @@ softplus arm with $t_{0}=0.5$, mean over valid seeds.}
 
 \begin{table}[t]
 \centering
-\caption{Grid 2, MAE: paired inference across seeds for each arm-level cell. Mean of the
-per-seed difference $e_{\mathrm{heat}}-e_{\mathrm{walk}}$ (negative favours the heat kernel) with
-95\% bootstrap interval, exact two-sided sign-test $p$, exact two-sided Wilcoxon signed-rank
-$p$, and the Wilcoxon $p$ Holm-corrected over the \numGthreeArmCells{} cells.}
+\caption{Grid 2, MAE: paired inference across seeds for each arm-level cell, 1000 epochs,
+submitted capacity. $\bar d$ is the mean over valid seed pairs of the per-seed difference
+$e_{\mathrm{heat}}-e_{\mathrm{walk}}$, negative favouring the heat kernel, with its 95\% bootstrap
+interval; the three $p$-values are the exact two-sided sign test, the exact two-sided Wilcoxon
+signed-rank test, and the Wilcoxon $p$ Holm-corrected over the \numGthreeArmCells{} cells of this
+table. No Holm-corrected $p$ is below 0.05.}
 \label{tab:grid3inf}
 \input{../figures/out/tab2b-grid3-inference.tex}
 \end{table}
@@ -745,7 +747,11 @@ majority verdict of rule~4 applied to this metric.}
 
 \begin{table}[t]
 \centering
-\caption{Grid 2, far-node error: paired inference across seeds, as in Table~\ref{tab:grid3inf}.}
+\caption{Grid 2, far-node error at 1000 epochs, submitted capacity: paired inference across
+seeds for each arm-level cell, with the same columns as Table~\ref{tab:grid3inf}: mean per-seed
+difference $e_{\mathrm{heat}}-e_{\mathrm{walk}}$ on the far-node metric with its 95\% bootstrap
+interval, exact sign-test $p$, exact Wilcoxon $p$, and the Wilcoxon $p$ Holm-corrected over the
+\numGthreeArmCells{} cells of this table. No cell reaches a corrected $p$ below 0.05.}
 \label{tab:aurcinf}
 \input{../figures/out/tab5b-aurc-inference.tex}
 \end{table}

@@ -337,28 +337,35 @@ if g3:
 
     def grid3_tables(key, fname, fname_inf):
         T = ["\\begin{tabular}{@{}lrllllcl@{}}\n\\toprule\ntask, $t$ arm & $N$ & GCN & heat & walk & leader & heat:walk & verdict \\\\\n\\midrule"]
-        I = ["\\begin{tabular}{@{}lrrrrrr@{}}\n\\toprule\ntask, $t$ arm & $N$ & $\\bar e_{\\mathrm{heat}}-\\bar e_{\\mathrm{walk}}$ & 95\\% CI & $p_{\\mathrm{sign}}$ & $p_{\\mathrm{Wilcoxon}}$ & $p_{\\mathrm{Holm}}$ \\\\\n\\midrule"]
-        rows_inf = []; V = {}
+        V = {}; cells = []
         for task in ("hops", "delay"):
             for arm in ARMS3:
                 T.append("\\multicolumn{8}{@{}l}{\\emph{%s field, %s}} \\\\" % (task, arm_label(arm)))
-                I.append("\\multicolumn{7}{@{}l}{\\emph{%s field, %s}} \\\\" % (task, arm_label(arm)))
                 for sh in SHELLS[:3]:
                     c = R.cell(g3, task, sh, arm, "h32l4", 1000)
                     st, cm, gain, vd, ld = R.summarise(c, key); ps = R.paired_stats(c, key)
-                    V[(task, sh, arm)] = (vd, ld, ps)
+                    V[(task, sh, arm)] = (vd, ld, ps); cells.append((task, sh, arm, ps))
                     T.append("& %d & %s & %s & %s & %s & %d:%d & %s \\\\" % (NN[sh], pm(st, "gcn"), pm(st, "heat"), pm(st, "qw"), ld, ps["wins_a"], ps["wins_b"], vd.replace("<", "$<$")))
-                    rows_inf.append(ps)
-        pv = [ps["p_wilcoxon"] for ps in rows_inf]; ph = R.holm(pv)
-        k = 0
-        for task in ("hops", "delay"):
-            for arm in ARMS3:
-                for sh in SHELLS[:3]:
-                    ps = rows_inf[k]
-                    I.append("& %d & %+.4f & [%+.4f, %+.4f] & %s & %s & %s \\\\" % (NN[sh], ps["diff"], ps["ci_lo"], ps["ci_hi"], fp(ps["p_sign"]), fp(ps["p_wilcoxon"]), fp(ph[k])))
-                    k += 1
-        T.append("\\bottomrule\n\\end{tabular}"); I.append("\\bottomrule\n\\end{tabular}")
-        tabfile(fname, T); tabfile(fname_inf, I)
+                T.append("\\addlinespace[2pt]")
+        T.append("\\bottomrule\n\\end{tabular}"); tabfile(fname, T)
+        # --- bang suy dien: Holm can p cua MOI o truoc, nen tinh xong roi moi in NHOM + SO cung nhau
+        pv = [ps["p_wilcoxon"] for (_, _, _, ps) in cells]; ph = R.holm(pv)
+        I = ["\\begin{tabular}{@{}lrrcrrr@{}}\n\\toprule\n"
+             "& & \\multicolumn{2}{c}{$\\bar d = \\bar e_{\\mathrm{heat}}-\\bar e_{\\mathrm{walk}}$} & \\multicolumn{3}{c}{two-sided $p$} \\\\\n"
+             "\\cmidrule(lr){3-4}\\cmidrule(lr){5-7}\n"
+             "$t$ arm & $N$ & mean & 95\\% CI & sign & Wilcoxon & Holm \\\\\n\\midrule"]
+        k = 0; cur_task = None
+        for (task, sh, arm, ps) in cells:
+            if task != cur_task:
+                I.append("\\multicolumn{7}{@{}l}{\\emph{%s field}} \\\\" % task); cur_task = task
+            first = (sh == SHELLS[0])
+            star = "$^{*}$" if (ph[k] == ph[k] and ph[k] < 0.05) else ""
+            I.append("%s & %d & $%+.4f$ & $[%+.4f,\\,%+.4f]$ & %s & %s & %s%s \\\\"
+                     % (arm_label(arm) if first else "", NN[sh], ps["diff"], ps["ci_lo"], ps["ci_hi"], fp(ps["p_sign"]), fp(ps["p_wilcoxon"]), fp(ph[k]), star))
+            if sh == SHELLS[2]:
+                I.append("\\addlinespace[2pt]")
+            k += 1
+        I.append("\\bottomrule\n\\end{tabular}"); tabfile(fname_inf, I)
         rob = {}
         for task in ("hops", "delay"):
             for sh in SHELLS[:3]:
