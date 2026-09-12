@@ -52,38 +52,26 @@ Propagation Operators on LEO Inter-Satellite-Link Graphs}
   city={Da Nang}, country={Viet Nam}}
 
 \begin{abstract}
-A preliminary version of this study reported, from \numPrelimSeeds{} seeds, that a propagation
-operator built from the transition probabilities of a continuous-time quantum walk,
-$|e^{-it\Lap}|^{2}$, outperformed the heat kernel $e^{-t\Lap}$ on a 1584-satellite low-Earth-orbit
-inter-satellite-link graph, and read the trend across shell sizes as a ballistic mechanism
-emerging with scale. This paper is a reproducibility audit of that claim. The object under test
-is the probability kernel, not the unitary propagator whose over-smoothing argument recent work
-has proved; the two kernels are both real, nonnegative and row-stochastic and differ only in row
-profile, which is stated before any result is read. Three operators sharing one eigenbasis and one
-network are compared on Walker-delta shells of 264 to 4400 satellites, on two node-field tasks,
-over ten seeds, across arms that vary the parameterisation and initialisation of the learned
-propagation time $t$, the capacity and the training budget, with two reach-matched decoupled
-baselines, for \numGridTwelveRuns{} plus \numGridThreeRuns{} training runs on one machine. With the
-preliminary budget held fixed, no operator improves on a constant predictor by more than
-\numGainLargeMax\% on any shell of 1584 satellites or more, in any arm, at any capacity; the
-threshold sensitivity of that statement is reported. With a five-fold budget every shell leaves the
-floor, and the preliminary result is not reproduced: under paired tests across seeds, no arm-level
-cell distinguishes the two spectral kernels at the 0.05 level after Holm correction
-(\numGthreeSigHolm{} of \numGthreeArmCells{}), the heat kernel leads in mean in
-\numGthreeLeadHeat{} cells and the walk kernel in \numGthreeLeadWalk{}, and the seed-majority
-verdicts the preliminary protocol would have declared move by up to \numSwapMaxMoved{} seeds when
-the metric changes from mean error to far-node error. What a learned propagation time buys is visible only against fixed-reach
-propagation, and only in the right arm: in its best $t$ arm the better spectral kernel beats
-personalised-PageRank and power-of-adjacency baselines with no learned time by
-\numFixedGapPctHopsShellOne\% at 1584 and \numFixedGapPctHopsDouble\% at 3168 satellites on the
-hop field, while in its worst arm the margin is \numFixedGapWorstPctHopsShellOne\% and
-\numFixedGapWorstPctHopsDouble\%, and both kernels beat the baselines in every arm in
-\numBothBeatFixedCells{} of 6 task-scale cells. The ranking at the one scale
-where the preliminary budget learns anything follows the $t$ arm through a seed-level bimodality
-with indistinguishable escape rates for the two kernels. Long training at a fixed learning rate
-collapses \numGridThreePathologyPct\% of runs to the constant solution, which is counted rather than
-dropped. The released artifact of the preliminary version is shown to have used a different
-configuration from its text. All code, results and the dated protocol are released.
+A preliminary version of this study reported, from \numPrelimSeeds{} seeds, that the
+transition-probability kernel of a continuous-time quantum walk, $|e^{-it\Lap}|^{2}$, outperforms
+the heat kernel $e^{-t\Lap}$ as a propagation operator on a 1584-satellite low-Earth-orbit
+inter-satellite-link graph, and read the trend across shell sizes as a ballistic mechanism emerging
+with scale. This paper is a reproducibility audit of that claim. Three operators sharing one
+eigenbasis and one network are compared on Walker-delta shells of 264 to 4400 satellites, on two
+node-field tasks, over ten seeds, across arms that vary the parameterisation and initialisation of
+the learned propagation time $t$, the capacity and the training budget, with two reach-matched
+fixed-propagation baselines, for \numGridTwelveRuns{} plus \numGridThreeRuns{} training runs. Under
+the preliminary budget, no operator improves on a constant predictor by more than
+\numGainLargeMax\% on any shell of 1584 satellites or more. With a five-fold budget every shell
+leaves the floor and the preliminary result is not reproduced: after Holm correction no arm-level
+cell separates the two kernels at the 0.05 level (\numGthreeSigHolm{} of \numGthreeArmCells{}), and
+the seed-majority verdicts the preliminary protocol would have declared move by up to
+\numSwapMaxMoved{} seeds when the metric changes. A learned $t$ beats fixed-reach propagation by
+\numFixedGapPctHopsShellOne\% at 1584 satellites in its best arm and by
+\numFixedGapWorstPctHopsShellOne\% in its worst. Long training collapses
+\numGridThreePathologyPct\% of runs to the constant solution, which is counted rather than dropped,
+and the released artifact of the preliminary version used a different configuration from its text.
+All code, results and the dated protocol are released.
 \end{abstract}
 
 \begin{keyword}
