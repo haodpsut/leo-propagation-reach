@@ -1,0 +1,5 @@
+{
+  "note": "CPU-only runs of the same s4400 cell before eigendecomposition caching, one process contending with a second on the 80-core VPS; from /tmp/leo_relu_t0.5.log and /tmp/leo_softplus_t0.5.log on 11/09/2026 13:29. Not a benchmark; recorded because the paper cites the order of magnitude.",
+  "s4400_cpu_secs": {"qw_relu_seed2": 980.9, "heat_softplus_seed2": 1096.2},
+  "cache_identity_check": {"cell": "s264 delay heat seed3 50ep", "mae_no_cache": 0.1749912857247347, "mae_cache": 0.1749912857247347, "identical_digits": 16}
+}

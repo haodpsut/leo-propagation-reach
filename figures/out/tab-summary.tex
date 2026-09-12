@@ -4,12 +4,15 @@
 finding & value & derived in \\
 \midrule
 runs, fixed 200-epoch budget (grid 1) & 1920 & Sec.~\ref{sec:floor} \\
-largest gain over constant on any shell $\geq$1584, any arm (grid 1) & 2.9\% & Fig.~\ref{fig:floor}, Tab.~\ref{tab:floor} \\
-rankable cells at $\geq$1584 satellites, hop field (grid 1) & 0 of 24 & Tab.~\ref{tab:floor} \\
-heat-vs-walk verdicts at 264 satellites across the four $t$ arms (grid 1) & tie / heat / tie / heat & Fig.~\ref{fig:arms} \\
-runs, 1000-epoch budget (grid 2) & 360 & Sec.~\ref{sec:budget} \\
-task-scale cells where heat wins in every arm (grid 2) & 3 of 6 & Tab.~\ref{tab:grid3} \\
-task-scale cells where walk wins in every arm (grid 2) & 0 of 6 & Tab.~\ref{tab:grid3} \\
+largest gain over constant on any shell $\geq$1584, any arm, either capacity (grid 1) & 2.9\% & Fig.~\ref{fig:floor}, Tab.~\ref{tab:floor} \\
+rankable cells at $\geq$1584 satellites, hop field, at floor 5\% / 2\% / 1\% (grid 1) & 0 / 2 / 5 of 24 & Tab.~\ref{tab:sens} \\
+heat-vs-walk verdicts at 264 satellites across the four $t$ arms, submitted capacity (grid 1) & tie / heat / tie / heat & Fig.~\ref{fig:arms} \\
+the same, released capacity (grid 1) & tie / tie / walk / tie & Tab.~\ref{tab:s264} \\
+runs, 1000-epoch budget, 2 $t$ arms (grid 2) & 360 & Sec.~\ref{sec:budget} \\
+task-scale cells where heat / walk wins in every arm, MAE (grid 2) & 3 / 0 of 6 & Tab.~\ref{tab:grid3} \\
+the same on the far-node metric (grid 2) & 0 / 0 of 6 & Tab.~\ref{tab:aurc} \\
+arm-level cells where heat / walk leads in mean, MAE (grid 2) & 7 / 5 of 12 & Tab.~\ref{tab:grid3} \\
+arm-level cells with Wilcoxon $p<0.05$ before / after Holm, MAE (grid 2) & 5 / 0 of 12 & Tab.~\ref{tab:grid3inf} \\
 runs collapsing to the constant solution under long training (grid 2) & 40 (11.1\%) & Sec.~\ref{sec:collapse} \\
 preliminary 1584-satellite result, walk vs heat, 3 seeds & 0.148 vs 0.168 & Sec.~\ref{sec:budget} \\
 \bottomrule
