@@ -51,6 +51,7 @@ W_HALF = 2.99
 FLOOR_GAIN, WIN_SEEDS = 0.05, 7
 SHELLS = ["s264", "s1584", "s3168", "s4400"]
 NN = {"s264": 264, "s1584": 1584, "s3168": 3168, "s4400": 4400}
+SHNAME = {"s264": "Small", "s1584": "ShellOne", "s3168": "Double", "s4400": "Large"}   # ten macro chi chu cai
 NUM = {}
 
 
@@ -64,7 +65,7 @@ def M(name, value):
 def save(fig, name, target_w=W_WIDE):
     path_pdf = os.path.join(OUTD, "%s.pdf" % name)
     got = None
-    for _ in range(6):
+    for _ in range(12):
         fig.savefig(path_pdf, bbox_inches="tight")
         blob = open(path_pdf, "rb").read()
         mm = re.findall(rb"/MediaBox\s*\[([^\]]*)\]", blob)
@@ -75,7 +76,7 @@ def save(fig, name, target_w=W_WIDE):
         if abs(got - target_w) < 0.005:
             break
         w, h = fig.get_size_inches()
-        fig.set_size_inches(w + (target_w - got), h)
+        fig.set_size_inches(max(w + (target_w - got), 1.5), h)   # legend rong hon khung thi dung, khong am
     fig.savefig(os.path.join(OUTD, "%s.png" % name), bbox_inches="tight", dpi=200)
     plt.close(fig)
     print("     %-18s %.2f in" % (name, got or -1))
@@ -122,9 +123,11 @@ def summarise(c):
         qw = sum(c["qw"][s]["mae"] < c["heat"][s]["mae"] for s in common)
         if gain < FLOOR_GAIN:
             vd = "floor"
-        elif len(common) >= WIN_SEEDS and qw >= WIN_SEEDS and st["qw"][0] < st["heat"][0]:
+        elif len(common) < WIN_SEEDS:
+            vd = "n<%d" % WIN_SEEDS          # giong het analysis/make_tables.py
+        elif qw >= WIN_SEEDS and st["qw"][0] < st["heat"][0]:
             vd = "qw"
-        elif len(common) >= WIN_SEEDS and hw >= WIN_SEEDS and st["heat"][0] < st["qw"][0]:
+        elif hw >= WIN_SEEDS and st["heat"][0] < st["qw"][0]:
             vd = "heat"
         else:
             vd = "tie"
@@ -212,7 +215,8 @@ if g3:
     print("  grid3: %d hang, %d benh ly" % (len(g3), sum(r["pathology"] for r in g3)))
     M("numGridThreeRuns", len(g3)); M("numGridThreePathology", sum(r["pathology"] for r in g3))
     ARMS3 = ["relu/t0=0.5", "softplus/t0=0.5"]
-    fig, axes = plt.subplots(1, 2, figsize=(W_WIDE, 2.4), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(W_WIDE, 2.6), sharey=True)
+    X = [0, 1, 2]
     for ax, task in zip(axes, ("hops", "delay")):
         for op in ("gcn", "heat", "qw"):
             for ai, arm in enumerate(ARMS3):
@@ -220,21 +224,25 @@ if g3:
                 for sh in SHELLS[:3]:
                     st, cm, gain, vd = summarise(cell(g3, task, sh, arm, "h32l4", 1000))
                     mu.append(st.get(op, (np.nan,))[0]); sd.append(st.get(op, (0, 0))[1])
-                ax.errorbar([NN[s] for s in SHELLS[:3]], mu, yerr=sd, color=C[op], marker=MK[op],
-                            ls=["-", "--"][ai], capsize=2, lw=1.0, ms=3.5,
+                off = (-0.06 if ai == 0 else 0.06) + {"gcn": -0.12, "heat": 0.0, "qw": 0.12}[op]
+                ax.errorbar([x + off for x in X], mu, yerr=sd, color=C[op], marker=MK[op],
+                            ls=["-", "--"][ai], capsize=1.5, lw=0.9, ms=3.2, elinewidth=0.6,
                             label=(LBL[op] + ", " + arm.split("/")[0]))
         cms = [summarise(cell(g3, task, sh, ARMS3[0], "h32l4", 1000))[1] for sh in SHELLS[:3]]
-        ax.plot([NN[s] for s in SHELLS[:3]], cms, color=C["const"], ls=":", lw=0.9, label="constant")
-        ax.set_xscale("log"); ax.set_xticks([264, 1584, 3168]); ax.set_xticklabels(["264", "1584", "3168"])
-        ax.set_xlabel("satellites in shell"); ax.set_title(task + " field, 1000 epochs")
-    axes[0].set_ylabel("MAE (mean ± sd over 10 seeds)")
-    axes[1].legend(fontsize=6.5, ncol=2)
+        ax.plot(X, cms, color=C["const"], ls=":", lw=0.9, label="constant predictor")
+        ax.set_xticks(X); ax.set_xticklabels(["264", "1584", "3168"])
+        ax.set_xlabel("satellites in shell"); ax.set_title(task + " field", fontsize=8)
+    axes[0].set_ylabel("MAE (mean $\\pm$ sd, valid seeds)")
+    h, l = axes[1].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=3, fontsize=6.5, bbox_to_anchor=(0.5, -0.04),
+               handlelength=2.2, columnspacing=1.0)
+    fig.subplots_adjust(bottom=0.36, wspace=0.08)
     save(fig, "fig4-scale-1000ep")
     for task in ("hops", "delay"):
         for sh in SHELLS[:3]:
             vs = [summarise(cell(g3, task, sh, a, "h32l4", 1000))[3] for a in ARMS3]
-            M("numGthree" + task.capitalize() + sh.upper() + "Verdict", " / ".join(vs))
-            M("numGthree" + task.capitalize() + sh.upper() + "Robust",
+            M("numGthree" + task.capitalize() + SHNAME[sh] + "Verdict", " / ".join(vs))
+            M("numGthree" + task.capitalize() + SHNAME[sh] + "Robust",
               "yes" if len(set(vs)) == 1 and vs[0] in ("heat", "qw") else "no")
 else:
     print("  grid3: chua co (bo qua fig4 va macro G3)")
