@@ -16,6 +16,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{multirow}
 \usepackage{amsmath,amssymb}
 \usepackage[hyphens]{url}
 \usepackage{tikz}
@@ -62,7 +63,7 @@ on two node-field tasks, over ten seeds, and across arms that vary the parameter
 initialisation of the learned propagation time $t$, the network capacity and the training
 budget, for \numGridTwelveRuns{} plus \numGridThreeRuns{} training runs on one machine.
 Three findings follow. First, with a training budget held fixed across scales, no operator
-improves on a constant predictor by more than \numGainLargeMaxSubmitted\% on any shell of
+improves on a constant predictor by more than \numGainLargeMax\% on any shell of
 1584 satellites or more, in any arm: the comparison there measures a budget floor, not an
 operator. Second, on the one scale where learning occurs under that budget, the ranking of
 the two spectral operators changes with how $t$ is parameterised and initialised, and traces
@@ -135,7 +136,7 @@ The contribution is a controlled comparison and what it shows.
   winner, and the requirement that a ranking hold in every arm, was declared before the runs
   and is recorded in the repository history.
 \item Under a fixed budget of 200 epochs, no operator improves on the constant predictor by
-  more than \numGainLargeMaxSubmitted\% on any shell of 1584 satellites or more, in any of eight
+  more than \numGainLargeMax\% on any shell of 1584 satellites or more, in any of eight
   configuration-by-arm combinations (Section~\ref{sec:floor}). On the one shell where learning
   occurs, the heat-versus-walk ranking changes with the $t$ arm, and the reason is visible at
   the seed level: a run either leaves the constant solution or stays on it
@@ -158,7 +159,7 @@ and the LEO setting in the literature. Section~\ref{sec:setting} defines the gra
 operators on one eigenbasis (Section~\ref{sec:operators}) and the network and tasks
 (Section~\ref{sec:network}). Section~\ref{sec:protocol} states the protocol and the reading rules
 (Section~\ref{sec:rules}).
-Section~\ref{sec:results} reports the three grids. Section~\ref{sec:discussion} interprets
+Section~\ref{sec:results} reports the two grids and their cost (Section~\ref{sec:cost}). Section~\ref{sec:discussion} interprets
 them, Section~\ref{sec:threats} lists what limits them, and Section~\ref{sec:conclusion}
 concludes.
 
@@ -280,6 +281,24 @@ at $j$ is found at $i$ after time $t$. Both~\eqref{eq:heat} and~\eqref{eq:walk} 
 nonnegative and row-stochastic; they differ in the profile of the row as a function of graph
 distance, monotone for the heat kernel and oscillatory for the walk kernel, and in how that
 profile's width grows with $t$.
+
+Figure~\ref{fig:spreading} makes the difference concrete on a path graph, where distance from
+the source is a single coordinate. A row of the heat kernel is a bell whose spatial variance grows
+as $t^{\numSpreadExpHeat}$; a row of the walk kernel is a pair of fronts whose variance grows as
+$t^{\numSpreadExpWalk}$, with oscillations between them. The exponents are fitted from the
+kernels themselves. This is the ballistic-versus-diffusive distinction in its cleanest form: at
+equal $t$ the walk reaches farther, and its reach grows faster with $t$. Whether that translates
+into a better propagation operator once $t$ is learned is the empirical question of this paper.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{../figures/out/fig5-spreading.pdf}
+\caption{Analytic illustration on a path of 401 nodes. Left: one row of the heat kernel and of
+the walk kernel from the central node at two propagation times, normalised to sum to one. Right:
+spatial variance of the row against $t$ on logarithmic axes; the fitted slopes are
+\numSpreadExpHeat{} for the heat kernel and \numSpreadExpWalk{} for the walk kernel.}
+\label{fig:spreading}
+\end{figure}
 
 \subsection{Network, parameterisation of $t$, and tasks}
 \label{sec:network}
@@ -416,28 +435,29 @@ gain~\eqref{eq:gain} of the best operator over the constant predictor as the she
 preliminary budget of 200 epochs. On the 264-satellite shell the improvement is between
 \numGainSTwoSixFourMinReleased\% and \numGainSTwoSixFourMaxReleased\% at the released capacity
 and between \numGainSTwoSixFourMinSubmitted\% and \numGainSTwoSixFourMaxSubmitted\% at the
-submitted capacity. On every larger shell it never exceeds \numGainLargeMaxSubmitted\%, in any
+submitted capacity. On every larger shell it never exceeds \numGainLargeMax\%, in any
 of the eight capacity-by-arm combinations, on either task: of the \numFloorCellsLarge{} hop-field
 cells at 1584 satellites and above, \numRankableCellsLarge{} are rankable. The models have not
 left the constant solution. Of \numGridTwelveRuns{} runs, \numGridTwelvePathology{} were excluded
-as pathologies and \numGridTwelvePlateau{} on the large shells were plateaus in the sense of
-rule~2.
+as pathologies and \numGridTwelvePlateau{} were plateaus in the sense of rule~2, kept; of the
+\numGridTwelveLargeRuns{} valid runs on the three large shells, \numGridTwelveAtFloorLarge{} end
+within 2\% of the constant predictor.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{../figures/out/fig1-floor.pdf}
-\caption{Improvement of the best operator over the constant predictor on the hop field at 200
-epochs, as a function of shell size, for the released and the submitted capacity and the four
-$t$ arms. The dotted line is the 5\% floor of rule~3. Above 264 satellites every combination
-lies below it.}
+\caption{Gain~\eqref{eq:gain} of the best operator over the constant predictor at 200 epochs,
+as a function of shell size, for the hop field (top) and the delay field (bottom), the released
+and the submitted capacity (columns) and the four $t$ arms. The dotted line is the 5\% floor of
+rule~3. Above 264 satellites every combination lies below it on both tasks.}
 \label{fig:floor}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Improvement (\%) of the best operator over the constant predictor, hop field, 200
-epochs, ten seeds per cell. A dagger marks cells below the 5\% floor, where the operator
-ranking is not read.}
+\caption{Gain (\%) of the best operator over the constant predictor at 200 epochs, ten seeds
+per cell, both tasks. A dagger marks cells below the 5\% floor, where the operator ranking is
+not read.}
 \label{tab:floor}
 \input{../figures/out/tab1-floor.tex}
 \end{table}
@@ -467,11 +487,40 @@ or stays near it.}
 \label{fig:arms}
 \end{figure}
 
+Table~\ref{tab:s264} gives the means, seed counts and verdicts behind the figure for all eight
+capacity-by-arm combinations. Of the \numSTwoSixFourCells{} verdicts, \numSTwoSixFourTies{}
+are ties, \numSTwoSixFourHeatWins{} are heat wins and \numSTwoSixFourWalkWins{} is a walk win,
+and no verdict repeats across all four arms at either capacity; the same operators on the same
+instances rank differently depending only on the $t$ arm.
+
+\begin{table}[t]
+\centering
+\caption{Hop field, 264 satellites, 200 epochs: MAE (mean $\pm$ sd over valid seeds) for the
+three operators under each capacity and $t$ arm, the number of seeds on which each spectral
+operator is lower, and the verdict under rules~3 and~4. The constant predictor scores
+\numSTwoSixFourConst{}.}
+\label{tab:s264}
+\input{../figures/out/tab3-s264-200ep.tex}
+\end{table}
+
 The figure also shows why. For both spectral operators the ten seeds do not scatter around a
 mean; they split. Some runs reach errors well below the constant predictor and the rest stay
 near it. A ranking between two operators at this budget is largely a count of how many seeds
 escaped, and that count moves with the $t$ arm because $t$ decides how far a layer reaches at
-initialisation and how quickly gradient descent can move it. The left panel of Figure~\ref{fig:tlearned}
+initialisation and how quickly gradient descent can move it. Table~\ref{tab:escape} counts the
+escapes, defined as a seed whose error is below 90\% of the constant predictor's. Pooled over
+the eight combinations, \numEscapeHeat{} heat runs (\numEscapeHeatPct\%) and \numEscapeWalk{}
+walk runs (\numEscapeWalkPct\%) escape; the two operators escape at the same overall rate, and
+the per-arm differences that drive the verdicts in Table~\ref{tab:s264} are differences of two
+or three seeds out of ten.
+
+\begin{table}[t]
+\centering
+\caption{Seeds that escaped the constant solution (MAE below 90\% of the constant predictor)
+out of valid seeds, hop field, 264 satellites, 200 epochs.}
+\label{tab:escape}
+\input{../figures/out/tab4-escape.tex}
+\end{table} The left panel of Figure~\ref{fig:tlearned}
 shows the learned $t_{\ell}$ per layer as a function of shell size for the softplus arm at this
 budget: the first layer learns a larger $t$ than the later ones for both operators, and the
 values do not grow with the shell, which is consistent with the models on large shells not
@@ -529,13 +578,40 @@ eccentricity is tens of hops; on the hop field it clears the 5\% floor only on t
 264-satellite shell (gain \numGthreeGcnGainSmall\%, against \numGthreeGcnGainShellOne\% at
 1584 and \numGthreeGcnGainDouble\% at 3168).
 
-The right panel of Figure~\ref{fig:tlearned} shows what the budget buys. At 1000 epochs the
+Table~\ref{tab:tlearned} and the right panel of Figure~\ref{fig:tlearned} show what the budget buys. At 1000 epochs the
 heat kernel's first-layer $t$ grows with the shell, from \numTlayerOneSmallHeat{} at 264
 satellites to \numTlayerOneShellOneHeat{} at 1584 and \numTlayerOneDoubleHeat{} at 3168, while
 the walk kernel's stays between \numTlayerOneSmallWalk{} and \numTlayerOneDoubleWalk{}. The
 diffusive operator reaches farther on larger graphs by learning to; the walk operator does not
 move its time parameter in the same way, and its larger seed variance is consistent with a loss
 that is not monotone in $t$.
+
+\begin{table}[t]
+\centering
+\caption{Learned propagation time per layer at 1000 epochs, hop field, submitted capacity,
+softplus arm with $t_{0}=0.5$, mean over valid seeds.}
+\label{tab:tlearned}
+\input{../figures/out/tab7-tlearned.tex}
+\end{table}
+
+\paragraph{Far-node error}
+MAE over all nodes is dominated by nodes near the destination on a large graph. The preliminary
+version therefore also reported the area under the error curve restricted to far nodes, those
+beyond half the destination's eccentricity, as the metric on which a longer reach should show
+most clearly. Table~\ref{tab:aurc} reports it for grid 2 under the same reading rules. The
+picture does not change: the heat kernel wins \numAurcHeatWins{} of \numAurcCells{} cells and
+the walk kernel \numAurcWalkWins{}, with the rest ties or undecided. On the metric chosen to
+favour reach, the operator built for reach does not win.
+
+\begin{table}[t]
+\centering
+\caption{Far-node error (area under the error curve over nodes beyond half the destination's
+eccentricity; lower is better) at 1000 epochs, submitted capacity: mean $\pm$ sd over valid
+seeds, seeds on which each spectral operator is lower, and verdict under rules~4 and~5 applied
+to this metric.}
+\label{tab:aurc}
+\input{../figures/out/tab5-aurc.tex}
+\end{table}
 
 The preliminary version's finding, a walk-kernel error of \numPrelimWalkMAE{} against
 \numPrelimHeatMAE{} at 1584 satellites, is not reproduced. Under the same parameterisation and
@@ -549,10 +625,44 @@ Of the \numGridThreeRuns{} runs of grid 2, \numGridThreePathology{}
 (\numGridThreePathologyPct\%) were excluded under rule~2. Inspection shows one pattern: the
 loss falls, then rises again by up to \numGridThreeRiseMaxPct\% and the run ends on the
 constant solution. It affects all three operators and both $t$ arms, and it is the reason
-several cells in Table~\ref{tab:grid3} fall below seven valid seed pairs. A fixed learning rate
+several cells in Table~\ref{tab:grid3} fall below seven valid seed pairs. Table~\ref{tab:collapse}
+breaks the count down by shell and operator: the GCN collapses in \numCollapseGcn{} runs, the
+heat kernel in \numCollapseHeat{} and the walk kernel in \numCollapseWalk{}, so the instability
+is not specific to the spectral operators or to the learned $t$.
+
+\begin{table}[t]
+\centering
+\caption{Runs excluded as pathologies (loss rising by more than 1\% between thirds) out of
+runs, 1000 epochs, submitted capacity, both tasks and both $t$ arms pooled.}
+\label{tab:collapse}
+\input{../figures/out/tab6-collapse.tex}
+\end{table} A fixed learning rate
 that is adequate for 200 epochs is not stable for 1000 on these graphs. We report the rate
 rather than tune it away, because a reader who runs a longer schedule to escape the floor of
 Section~\ref{sec:floor} should expect to meet it.
+
+\subsection{Cost}
+\label{sec:cost}
+
+Table~\ref{tab:cost} reports the median wall-clock time per run on one consumer GPU, with the
+eigendecomposition of each instance cached. The spectral operators build an $N\times N$
+propagator per layer per instance per epoch from the eigenbasis, an $O(N^{3})$ product that
+dominates at scale; the walk kernel builds two such products, for the real and imaginary parts,
+and squares them. On the 4400-satellite shell at 200 epochs a walk run takes
+\numSecsWalkLarge{}~s against \numSecsHeatLarge{}~s for the heat kernel and
+\numSecsGcnLarge{}~s for the GCN, whose propagator is sparse. On CPU the same cell took of the
+order of an hour before caching, which is why the preliminary version stopped at 1584
+satellites. For a comparison across scales, the cost of the operator is part of what is being
+compared.
+
+\begin{table}[t]
+\centering
+\caption{Median wall-clock seconds per training run on one GPU (eigendecomposition cached),
+submitted capacity, by shell and operator, at the two budgets. The 4400-satellite shell was not
+run at 1000 epochs.}
+\label{tab:cost}
+\input{../figures/out/tab8-cost.tex}
+\end{table}
 
 % =====================================================================
 \section{Discussion}
@@ -590,6 +700,23 @@ Section~\ref{sec:budget} does not confirm. Ten seeds and a seed-majority rule ar
 that made the present cells decidable, and even then the pathology rate of
 Section~\ref{sec:collapse} left several undecided.
 
+\paragraph{Recommendations}
+For anyone comparing learned propagation operators on constellation graphs, the protocol reduces
+to five habits, each of which caught something in this study: report the constant predictor
+beside every result; let the training budget grow with the graph, or show that it does not need
+to; treat the parameterisation and initialisation of any learned reach parameter as an arm and
+report the ranking in every arm; use enough seeds to apply a majority rule, and report the
+majority, not only the mean; and count collapsed runs instead of dropping them. None of these
+is specific to quantum-walk operators, and all of them are cheap next to the runs themselves.
+
+\paragraph{What would change the verdict}
+Three things would. A propagator applied in feature space, unitary rather than stochastic, would
+test the argument of CTQW-GNN~\cite{ctqwgnn} directly instead of the probability kernel that
+inherits only its profile. A learning-rate schedule would reduce the collapse rate of
+Section~\ref{sec:collapse} and might decide the cells that are now undecided. And a task with
+load, in which the field to be predicted depends on traffic and not only on geometry, would
+say whether the operator ranking survives contact with a network function.
+
 % =====================================================================
 \section{Threats to validity}
 \label{sec:threats}
@@ -607,6 +734,11 @@ of these operators, and the floor and variance effects would carry over; the ran
 specific to Adam at 0.01 for 1000 epochs. A schedule would likely reduce it and might change the
 undecided cells. The protocol declares the rate rather than tunes it because tuning per operator
 would break parameter matching.
+
+\textbf{The eigenbasis is cached in single precision.} Training already casts the eigenpairs to
+single precision, so caching them in that precision is numerically identical to recomputing, and
+this was verified on a cell before the grids ran; but every arm therefore shares one
+eigendecomposition per instance, and a numerical error in it would affect all arms alike.
 
 \textbf{The reading rules are choices.} The 5\% floor and the seven-of-ten majority were fixed
 before the runs and would give different cell verdicts at other values. Both are reported with
