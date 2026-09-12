@@ -91,7 +91,7 @@ def fp(p):
     return "---" if p != p else ("$<$0.001" if p < 0.001 else "%.3f" % p)
 
 
-WIDE = {"tab3-s264-200ep.tex", "tab2-grid3.tex", "tab5-aurc.tex", "tab-swap.tex", "tab2b-grid3-inference.tex", "tab5b-aurc-inference.tex"}
+WIDE = {"tab3-s264-200ep.tex", "tab2-grid3.tex", "tab5-aurc.tex", "tab-swap.tex", "tab2b-grid3-inference.tex", "tab5b-aurc-inference.tex", "tab-fixed.tex"}
 
 
 def tabfile(name, lines):
@@ -445,17 +445,41 @@ if g3:
 
     if HAS_FIXED:
         T = ["\\begin{tabular}{@{}lrllcllr@{}}\n\\toprule\n& & \\multicolumn{2}{c}{200 epochs} & & \\multicolumn{3}{c}{1000 epochs} \\\\\n\\cmidrule{3-4}\\cmidrule{6-8}\ntask & $N$ & PPR & SGC & & PPR & SGC & best of heat/walk \\\\\n\\midrule"]
-        def s_(c, op):
+        def s_(c, op, n=True):
             v = [r["mae"] for r in c.get(op, {}).values()]
-            return ("%.3f $\\pm$ %.3f (%d)" % (np.mean(v), np.std(v, ddof=1) if len(v) > 1 else 0, len(v))) if v else "---"
+            if not v:
+                return "---"
+            return ("%.3f $\\pm$ %.3f" % (np.mean(v), np.std(v, ddof=1) if len(v) > 1 else 0)) + ((" (%d)" % len(v)) if n else "")
         for task in ("hops", "delay"):
             for sh in SHELLS:
                 c2 = R.cell_fixed_ops(g12, task, sh, "h32l4", 200); c3 = R.cell_fixed_ops(g3, task, sh, "h32l4", 1000)
                 best = "---"
                 if sh != "s4400":
                     best = "%.3f" % min(min(R.summarise(R.cell(g3, task, sh, a, "h32l4", 1000))[0][op][0] for op in ("heat", "qw")) for a in ARMS3)
-                T.append("%s & %d & %s & %s & & %s & %s & %s \\\\" % (task, NN[sh], s_(c2, "ppr"), s_(c2, "sgc"), s_(c3, "ppr"), s_(c3, "sgc"), best))
+                T.append("%s & %d & %s & %s & & %s & %s & %s \\\\" % (task, NN[sh], s_(c2, "ppr", False), s_(c2, "sgc", False), s_(c3, "ppr"), s_(c3, "sgc"), best))
         T.append("\\bottomrule\n\\end{tabular}"); tabfile("tab-fixed.tex", T)
+        # macro: kernel pho tot nhat vs baseline co dinh tot nhat, 1000 epoch, tung shell (hops)
+        for task in ("hops", "delay"):
+            for sh in SHELLS[:3]:
+                c3 = R.cell_fixed_ops(g3, task, sh, "h32l4", 1000)
+                fixed_best = min(np.mean([r["mae"] for r in c3[op].values()]) for op in ("ppr", "sgc") if c3.get(op))
+                spec_best = min(min(R.summarise(R.cell(g3, task, sh, a, "h32l4", 1000))[0][op][0] for op in ("heat", "qw")) for a in ARMS3)
+                M("numFixedBest" + task.capitalize() + SHNAME[sh], "%.3f" % fixed_best)
+                M("numSpecBest" + task.capitalize() + SHNAME[sh], "%.3f" % spec_best)
+                M("numFixedGapPct" + task.capitalize() + SHNAME[sh], round(100 * (fixed_best - spec_best) / fixed_best))
+                # nhanh t TE NHAT cua kernel pho tot hon (theo trung binh cua nhanh te nhat)
+                worst = {op: max(R.summarise(R.cell(g3, task, sh, a, "h32l4", 1000))[0][op][0] for a in ARMS3) for op in ("heat", "qw")}
+                spec_worst = min(worst.values())
+                M("numSpecWorst" + task.capitalize() + SHNAME[sh], "%.3f" % spec_worst)
+                M("numFixedGapWorstPct" + task.capitalize() + SHNAME[sh], round(100 * (fixed_best - spec_worst) / fixed_best))
+        both = sum(1 for task in ("hops", "delay") for sh in SHELLS[:3]
+                   if all(max(R.summarise(R.cell(g3, task, sh, a, "h32l4", 1000))[0][op][0] for a in ARMS3) <
+                          min(np.mean([r["mae"] for r in R.cell_fixed_ops(g3, task, sh, "h32l4", 1000)[o].values()]) for o in ("ppr", "sgc"))
+                          for op in ("heat", "qw")))
+        M("numBothBeatFixedCells", both)
+        # baseline co dinh o 200 epoch: co roi san o >=1584 khong
+        fx = [r for r in g12 if r["op"] in ("ppr", "sgc") and r["shell"] != "s264" and not r["pathology"]]
+        M("numFixedLargeMaxGainPct", round(100 * max((r["const_mae"] - r["mae"]) / r["const_mae"] for r in fx), 1))
 
 # ================================================================ chi phi
 T = ["\\begin{tabular}{@{}lrrrcrrr@{}}\n\\toprule\n& \\multicolumn{3}{c}{200 epochs} & & \\multicolumn{3}{c}{1000 epochs} \\\\\n\\cmidrule{2-4}\\cmidrule{6-8}\n$N$ & GCN & heat & walk & & GCN & heat & walk \\\\\n\\midrule"]

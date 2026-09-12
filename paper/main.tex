@@ -72,9 +72,15 @@ cell distinguishes the two spectral kernels at the 0.05 level after Holm correct
 (\numGthreeSigHolm{} of \numGthreeArmCells{}), the heat kernel leads in mean in
 \numGthreeLeadHeat{} cells and the walk kernel in \numGthreeLeadWalk{}, and the seed-majority
 verdicts the preliminary protocol would have declared move by up to \numSwapMaxMoved{} seeds when
-the metric changes from mean error to far-node error. The ranking at the one scale where the
-preliminary budget learns anything follows the $t$ arm through a seed-level bimodality with
-indistinguishable escape rates for the two kernels. Long training at a fixed learning rate
+the metric changes from mean error to far-node error. What a learned propagation time buys is visible only against fixed-reach
+propagation, and only in the right arm: in its best $t$ arm the better spectral kernel beats
+personalised-PageRank and power-of-adjacency baselines with no learned time by
+\numFixedGapPctHopsShellOne\% at 1584 and \numFixedGapPctHopsDouble\% at 3168 satellites on the
+hop field, while in its worst arm the margin is \numFixedGapWorstPctHopsShellOne\% and
+\numFixedGapWorstPctHopsDouble\%, and both kernels beat the baselines in every arm in
+\numBothBeatFixedCells{} of 6 task-scale cells. The ranking at the one scale
+where the preliminary budget learns anything follows the $t$ arm through a seed-level bimodality
+with indistinguishable escape rates for the two kernels. Long training at a fixed learning rate
 collapses \numGridThreePathologyPct\% of runs to the constant solution, which is counted rather than
 dropped. The released artifact of the preliminary version is shown to have used a different
 configuration from its text. All code, results and the dated protocol are released.
@@ -685,13 +691,28 @@ model was fitted to and serves as the achievable-error reference for that model.
 \paragraph{Reach-matched baselines}
 Table~\ref{tab:fixed} reports the two decoupled operators of~\eqref{eq:fixed} beside the better
 of the two spectral kernels in each cell. They carry no learned $t$ and reach a fixed number of
-hops, so a spectral kernel that beats them does so by something other than reach alone, and one
-that does not beat them has not demonstrated that the learned time parameter earns its cost.
+hops, so a spectral kernel that beats them does so by something other than reach alone. At 200
+epochs the fixed-reach operators sit on the same floor as everything else on the large shells,
+gaining at most \numFixedLargeMaxGainPct\% over the constant predictor there. At 1000 epochs the
+comparison separates: on the 264-satellite hop field the better fixed-reach operator reaches
+\numFixedBestHopsSmall{} against \numSpecBestHopsSmall{} for the better spectral kernel, a gap of
+\numFixedGapPctHopsSmall\%, but at 1584 satellites it reaches \numFixedBestHopsShellOne{} against
+\numSpecBestHopsShellOne{} (\numFixedGapPctHopsShellOne\%) and at 3168 satellites
+\numFixedBestHopsDouble{} against \numSpecBestHopsDouble{} (\numFixedGapPctHopsDouble\%); on the
+delay field the gaps are \numFixedGapPctDelaySmall\%, \numFixedGapPctDelayShellOne\% and
+\numFixedGapPctDelayDouble\%. In the worst $t$ arm, however, the margin shrinks to
+\numFixedGapWorstPctHopsShellOne\% at 1584 and \numFixedGapWorstPctHopsDouble\% at 3168 satellites,
+and both kernels beat both baselines in every arm in only \numBothBeatFixedCells{} of the six
+task-scale cells. A learned propagation time can therefore earn its cost on the larger graphs,
+where a fixed reach of $1/\alpha$ or $K'$ hops is short of the eccentricity, but whether it does
+depends on how $t$ is parameterised and initialised, which is the paper's second finding seen
+from the other side. What survives is a statement about the family under a good $t$ arm, not
+about which member of the family is used.
 
 \begin{table}[t]
 \centering
-\caption{Reach-matched decoupled baselines: MAE (mean $\pm$ sd over valid seeds, count in
-parentheses) of personalised-PageRank propagation and of the $K'$-th power of the normalised
+\caption{Reach-matched decoupled baselines: MAE (mean $\pm$ sd over valid seeds; at 200 epochs all
+ten seeds are valid, at 1000 epochs the count is in parentheses) of personalised-PageRank propagation and of the $K'$-th power of the normalised
 adjacency, at 200 and 1000 epochs, submitted capacity, beside the lower of the two spectral
 kernels' means at 1000 epochs.}
 \label{tab:fixed}
@@ -935,7 +956,10 @@ ranking follows the parameterisation and initialisation of the learned propagati
 seed-level bimodality with indistinguishable escape rates; and with a budget that clears the
 floor, paired tests across ten seeds separate the two kernels in no arm-level cell after
 multiplicity correction, on either metric. The two kernels are the same kind of object, a real
-row-stochastic propagator with a learned reach, and they behave like it. What the audit adds
+row-stochastic propagator with a learned reach, and they behave like it; what the learned reach
+buys is visible against fixed-reach decoupled propagation, which the better kernel in its best
+arm beats by \numFixedGapPctHopsShellOne\% at 1584 satellites and \numFixedGapPctHopsDouble\% at
+3168 on the hop field, and which its worst arm barely beats or does not. What the audit adds
 beyond the non-reproduction is measured: a silent budget floor that scales with the graph, a
 propagation-time parameterisation that decides rankings at small budgets, a seed-vote statistic
 whose noise amplitude is two to three seeds on these data, and a collapse rate of a tenth of
