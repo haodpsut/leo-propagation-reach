@@ -172,17 +172,30 @@ class ScaleSample:
 
 def make_samples(name, n, seed, target="hops", seam=True, dtype=np.float32):
     """seam=True KEEPS the seam links (full torus, the setting of every torus grid);
-    seam=False CUTS them (the +Grid with a counter-rotating seam, the round-2 robustness arm)."""
+    seam=False CUTS them (the +Grid with a counter-rotating seam, the round-2 robustness arm);
+    seam="random" keeps the seam and removes the same NUMBER of inter-plane links as the seam cut
+    (S links, 2S endpoints) at random positions drawn per snapshot (the round-3 control that
+    separates topology from task nature)."""
     wk = walker(name)
     rng = np.random.default_rng(seed)
     out = []
     for i in range(n):
         t = float(rng.uniform(0, wk.period_s))
-        A, W = grid_isl_graph(wk, t, seam=seam)
+        A, W = grid_isl_graph(wk, t, seam=(seam is True or seam == "random"))
+        if seam == "random":
+            S = wk.S
+            iu, ju = np.triu_indices(A.shape[0], 1)
+            inter = (A[iu, ju] > 0) & ((iu // S) != (ju // S))
+            cand = np.flatnonzero(inter)
+            pick = np.random.default_rng(int(t * 1000) % (2 ** 32)).choice(cand, S, replace=False)
+            A = A.copy(); W = W.copy()
+            A[iu[pick], ju[pick]] = 0; A[ju[pick], iu[pick]] = 0
+            W[iu[pick], ju[pick]] = 0.0; W[ju[pick], iu[pick]] = 0.0
         cc = largest_cc(A)
         A, W = A[np.ix_(cc, cc)], W[np.ix_(cc, cc)]
+        tag = "" if seam is True else ("_rnd" if seam == "random" else "_cut")
         out.append(ScaleSample(A, W, int(rng.integers(0, A.shape[0])), target=target,
-                               eig_key=f"{name}_s{seed}_{i}" + ("" if seam else "_cut"), dtype=dtype))
+                               eig_key=f"{name}_s{seed}_{i}" + tag, dtype=dtype))
     return out
 
 

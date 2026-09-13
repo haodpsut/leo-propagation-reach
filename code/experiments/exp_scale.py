@@ -41,7 +41,7 @@ def cell(args):
     npdt = np.float64 if cfg["dtype"] == "float64" else np.float32
     from src.scale import make_samples, train_eval_logged
     t0 = time.time()
-    keep = cfg["seam"] == "keep"
+    keep = {"keep": True, "cut": False, "random": "random"}[cfg["seam"]]
     tr = make_samples(shell, cfg["n_train"], seed=1000 + seed, target=task, seam=keep, dtype=npdt)
     ev = make_samples(shell, cfg["n_eval"], seed=2000 + seed, target=task, seam=keep, dtype=npdt)
     r = train_eval_logged(op, tr, ev, hidden=cfg["hidden"], n_layers=cfg["n_layers"],
@@ -81,8 +81,9 @@ def main():
     ap.add_argument("--t-param", default="softplus", choices=["softplus", "relu"],
                     help="relu = old parameterisation (control arm); softplus = fixed")
     ap.add_argument("--t-init", type=float, default=0.5, help="initial propagation time (arm)")
-    ap.add_argument("--seam", default="keep", choices=["keep", "cut"],
-                    help="keep = full torus (every grid up to draft 3); cut = counter-rotating seam cut")
+    ap.add_argument("--seam", default="keep", choices=["keep", "cut", "random"],
+                    help="keep = full torus (every grid up to draft 3); cut = counter-rotating seam cut; "
+                         "random = torus minus 2S inter-plane links at random positions (round-3 control)")
     ap.add_argument("--ppr-alpha", type=float, default=0.05)
     ap.add_argument("--sgc-k", type=int, default=8)
     ap.add_argument("--ppr-k", type=int, default=20, help="power-iteration steps for PPR; 0 = exact inverse")
