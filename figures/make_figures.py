@@ -700,6 +700,9 @@ if g3:
                 bf = float(NUM["numLadderBest" + task.capitalize() + SHNAME[sh]])
                 both_l += all(max(R.summarise(R.cell(g3, task, sh, a, "h32l4", 1000))[0][op][0] for a in ARMS3) < bf for op in ("heat", "qw"))
         M("numBothBeatLadderCells", both_l)
+        gb = [float(NUM["numLadderGapBestPct" + t.capitalize() + SHNAME[sh]]) for t in ("hops", "delay") for sh in SHELLS[:3]]
+        gw = [float(NUM["numLadderGapWorstPct" + t.capitalize() + SHNAME[sh]]) for t in ("hops", "delay") for sh in SHELLS[:3]]
+        M("numLadderGapBestMin", min(gb)); M("numLadderGapBestMax", max(gb)); M("numLadderWorstBehindCells", sum(1 for g in gw if g < 0))
         M("numSpecBestBeatsLadderCells", sum(1 for task in ("hops", "delay") for sh in SHELLS[:3] if float(NUM["numSpecBest" + task.capitalize() + SHNAME[sh]]) < float(NUM["numLadderBest" + task.capitalize() + SHNAME[sh]])))
     M("numHasLadder", int(HAS_LADDER))
 

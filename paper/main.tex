@@ -871,15 +871,16 @@ is ahead in all \numSpecBestBeatsLadderCells{} task-scale cells, by \numLadderGa
 \numLadderGapBestPctHopsShellOne\% and \numLadderGapBestPctHopsDouble\% on the hop field and
 \numLadderGapBestPctDelaySmall\%, \numLadderGapBestPctDelayShellOne\% and
 \numLadderGapBestPctDelayDouble\% on the delay field; in its worst $t$ arm it is behind the best
-rung in every cell but one (\numLadderGapWorstPctHopsShellOne\% at 1584 and
-\numLadderGapWorstPctHopsDouble\% at 3168 satellites on the hop field, a negative margin being a
-loss), and both kernels beat the best rung in every arm in \numBothBeatLadderCells{} of the six
+rung in \numLadderWorstBehindCells{} of the six cells (\numLadderGapWorstPctHopsShellOne\% at 1584
+and \numLadderGapWorstPctHopsDouble\% at 3168 satellites on the hop field, a negative margin being
+a loss), and both kernels beat the best rung in every arm in \numBothBeatLadderCells{} of the six
 cells. The ladder has its own floor: SGC at $K'=64$, whose per-layer reach of
 \numReachSgcSixtyFourSmall{} hops on the 264-satellite shell is a third of the eccentricity,
 returns the constant predictor's error on both tasks there, the over-smoothing that a fixed reach
 beyond the field's scale produces. What a learned propagation time buys is therefore a margin of
-one to sixteen percent over a tuned fixed reach when its parameterisation and initialisation are
-right, and a loss to it when they are not; the first draft's ``53\%'' was the untuned baseline's
+\numLadderGapBestMin\% to \numLadderGapBestMax\% over a tuned fixed reach when its
+parameterisation and initialisation are right, and in \numLadderWorstBehindCells{} of six cells a
+loss to it when they are not; the first draft's ``53\%'' was the untuned baseline's
 failure, not the kernel's success.
 
 \begin{table}[htbp]
@@ -949,8 +950,15 @@ median of \numSwapMedianMoved{} and up to \numSwapMaxMoved{} seeds, and by two o
 \numSwapCellsMovedTwoPlus{} of \numSwapCells{} cells. That is the
 noise amplitude of the majority statistic, measured on the data themselves, and it is the size of
 the margins by which the majority verdicts of Tables~\ref{tab:s264} and~\ref{tab:grid3} were
-declared. On the metric chosen to favour reach, the operator built for reach does not win; but
-neither, under inference, does the other.
+declared. On the metric chosen to favour reach, the operator built for reach leads in mean on
+both large shells of the hop field, with seed votes of \numPooledAurcHopsShellOneWins{} and
+\numPooledAurcHopsDoubleWins{} and pooled intervals that just exclude zero, and the corrected
+$p$ of \numPooledAurcHopsShellOneHolm{} and \numPooledAurcHopsDoubleHolm{} certifies neither;
+the minimum detectable effects there, \numPooledAurcHopsShellOneMde{} and
+\numPooledAurcHopsDoubleMde{}, are larger than the observed differences of
+\numPooledAurcHopsShellOneD{} and \numPooledAurcHopsDoubleD{}. It is the cell the preliminary
+version built its case on, and the honest reading is that a lead of this size needs more than
+ten seeds to certify.
 
 \subsection{The seam-cut graph}
 \label{sec:seam}
