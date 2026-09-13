@@ -55,7 +55,8 @@ Mọi con số dưới đây sinh từ `figures/make_figures.py`; không số n�
 - §2 gap: "reach measured, not asserted".
 - Table-first pass: mọi đếm định tính chuyển thành macro (`numLadderWorstBehindCells`, `numSpecBestBeatsLadderCells`, ...).
 
-## Chưa xong (13/09)
-- 3 nhánh t cắt seam đang chạy; §5.5, Discussion, Intro, Abstract dùng macro `numSeam*` nên số tự cập nhật, NHƯNG câu chữ về "heat giữ 264 trên cả hai tác vụ ở đồ thị cắt seam" phải kiểm lại khi có đủ 4 nhánh (hiện delay/264 cắt seam: Holm 0.586, chưa chứng nhận).
-- Abstract 286 từ, cần về ≤250.
-- Đọc ngoài vòng 3.
+## Xong 13/09 14:30: draft 4 (`~/Downloads/leo-propagation-reach-draft4.pdf`, 36 tr)
+- 4 nhánh cắt seam (720 + 120 run): gộp Holm/6: heat 264 hop (10:0, 0.012), **walk 1584 hop (1:8, 0.039)**,
+  heat 264 delay (9:1, 0.039); 3168 và delay lớn không chứng nhận; far-node 0/6; luật đa số: heat 1, walk 0.
+- Abstract 246 từ. Cổng: no_hardcoded 33/33 sinh · sync ✅ · scale PASS · preflight PASS · 0 em-dash · 0 "honest".
+- Đọc ngoài vòng 3: Hảo tự gửi.

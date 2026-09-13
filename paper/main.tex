@@ -954,7 +954,7 @@ $p$ of \numPooledAurcHopsShellOneHolm{} and \numPooledAurcHopsDoubleHolm{} certi
 the minimum detectable effects there, \numPooledAurcHopsShellOneMde{} and
 \numPooledAurcHopsDoubleMde{}, are larger than the observed differences of
 \numPooledAurcHopsShellOneD{} and \numPooledAurcHopsDoubleD{}. It is the cell the preliminary
-version built its case on, and the honest reading is that a lead of this size needs more than
+version built its case on, and the reading the design supports is that a lead of this size needs more than
 ten seeds to certify.
 
 \subsection{The seam-cut graph}
@@ -968,18 +968,21 @@ epochs, submitted capacity, in \numSeamArms{} $t$ arms with the three operators
 (\numSeamCoreRuns{} runs, of which \numSeamPathology{}, \numSeamPathologyPct\%, are excluded under
 rule~2) and with the first-draft fixed-reach baselines (\numSeamFixedRuns{} runs), and read by the
 same six rules. Table~\ref{tab:seam} sets the softplus, $t_{0}=0.5$ arm on the two graphs side by
-side; Tables~\ref{tab:seamgrid} and~\ref{tab:seampooled} give every arm and the pooled test.
+side; Table~\ref{tab:seampooled} gives the pooled test, and Tables~\ref{tab:seamgrid}
+and~\ref{tab:seamgridinf} in the appendix every arm.
 
 Two things change and one does not. First, the instances now differ: training and test error
-separate by up to \numSeamFitMaxGap{}, and the GCN's seed dispersion, which was
-\numGcnSdSmall{} or less on the torus, grows to the level of the spectral kernels'. Second, the
+separate by up to \numSeamFitMaxGap{}, and the GCN's seed dispersion, which is
+\numGthreeGcnSdMax{} or less in every cell of grid~2 on the torus, reaches \numSeamGcnSdMax{}. Second, the
 hop field at 1584 satellites moves. In the softplus, $t_{0}=0.5$ arm the walk kernel reaches
 \numSeamHopsShellOneWalk{} against \numSeamHopsShellOneHeat{} for the heat kernel, a
 \numSeamHopsShellOneWins{} seed vote at Wilcoxon $p=\numSeamHopsShellOnePW$; pooled over the
 \numSeamArms{} arms the vote is \numSeamPooledHopsShellOneWins{} with
-$\bar d=\numSeamPooledHopsShellOneD$ and corrected $p=\numSeamPooledHopsShellOneHolm$, and the
-walk kernel wins in every arm under the majority rule at \numSeamWalkRobust{} of the six
-task-scale cells, the heat kernel at \numSeamHeatRobust{}. The preliminary version's direction at
+$\bar d=\numSeamPooledHopsShellOneD$ and corrected $p=\numSeamPooledHopsShellOneHolm$. The
+majority rule, which needs seven of ten in every arm, does not see it: across the six task-scale
+cells the heat kernel wins in every arm at \numSeamHeatRobust{} and the walk kernel at
+\numSeamWalkRobust{}, and by mean the heat kernel leads in \numSeamLeadHeat{} and the walk kernel
+in \numSeamLeadWalk{} of the \numSeamArmCells{} arm-level cells. The preliminary version's direction at
 1584 satellites, which the torus does not reproduce, is therefore recovered on the graph the
 preliminary version described, on its task, in \numSeamPooledWalkSig{} of the six pooled tests
 after correction. What does not change is the rest of the grid: the pooled leaders agree with
@@ -1143,7 +1146,7 @@ rows, an oscillatory profile whose width grows linearly with $t$ rather than as 
 learning a larger $t$, which the right panel of Figure~\ref{fig:tlearned} and
 Table~\ref{tab:reach} show it does, in the first layer and in proportion to the shell. What the
 paired tests find has to be stated in two halves. Where the design has power, on the
-264-satellite shell, the heat kernel is better on both tasks, on both graphs, in every arm
+264-satellite shell, the heat kernel is better on both tasks on both graphs
 (Tables~\ref{tab:pooled} and~\ref{tab:seampooled}); \numCIExclZeroSmall{} of the
 \numCIExclZero{} per-cell intervals that exclude zero are on that shell, and they point the same
 way. On the larger shells of the torus the tests certify nothing, and the reason is stated in
