@@ -844,35 +844,57 @@ for op in ("heat", "qw"):
 # ================================================================ so do giao thuc (TikZ)
 shells_txt = " $\\cdot$ ".join(str(_SH[k][0]) for k in SHELLS)
 proto = r"""\begin{tikzpicture}[
-  font=\scriptsize,
-  box/.style={draw, rounded corners=1.5pt, align=center, inner sep=3pt, minimum height=8.5mm, text width=23mm},
-  dim/.style={box, fill=black!3}, arm/.style={box, fill=black!8},
-  rule/.style={box, text width=17.5mm, minimum height=9mm, fill=black!12, inner sep=2pt},
-  >={Stealth[length=2mm]}]
-\node[dim] (ops)    at (0,0)      {OPSLINE};
-\node[dim] (shells) at (2.7,0)    {4 shells\\SHELLS};
-\node[dim] (tasks)  at (5.4,0)    {2 tasks\\hop $\cdot$ delay};
-\node[dim] (seeds)  at (8.1,0)    {10 seeds\\per cell};
-\node[arm] (tp)     at (0,-1.3)   {$t$ mapping\\relu $\cdot$ softplus};
-\node[arm] (t0)     at (2.7,-1.3) {$t$ initialisation\\$t_{0}$ = 0.5 $\cdot$ 2};
-\node[arm] (cap)    at (5.4,-1.3) {capacity\\PREL $\cdot$ PSUB params};
-\node[arm] (ep)     at (8.1,-1.3) {budget\\200 $\cdot$ 1000 epochs};
-\node[arm] (gr)     at (10.8,-1.3) {graph\\torus $\cdot$ seam cut};
-\node[dim] (fx)     at (10.8,0)    {fixed-reach ladder\\SGC $K'$ $\cdot$ PPR $\alpha$};
-\node[draw, dashed, rounded corners=2pt, inner sep=2.5mm, fit=(ops)(seeds)(tp)(ep)(gr)(fx)] (grid) {};
-\node[anchor=south, font=\scriptsize] at (grid.north) {one cell = (task, shell, arm); grid 1: 200 epochs, every arm; grid 2 and seam-cut arm: 1000 epochs, NARMS $t$ arms};
-\node[rule] (r3) at (3.4,-3.45) {3. floor\\$g < 0.05$:\\not rankable};
-\node[rule, left=2mm of r3] (r2) {2. pathology\\excluded,\\counted};
-\node[rule, left=2mm of r2] (r1) {1. constant\\baseline,\\every metric};
-\node[rule, right=2mm of r3] (r4) {4. vote\\$\geq 7/10$ seeds\\34\% FPR};
-\node[rule, right=2mm of r4] (r5) {5. robust\\same in\\every arm};
-\node[rule, right=2mm of r5] (r6) {6. inference\\pooled test,\\Holm, MDE};
-\draw[->] (grid.south) -- node[right, font=\scriptsize, text=black!60] {reading rules, in order} (r3.north);
+  font=\scriptsize, >={Stealth[length=1.8mm]},
+  grp/.style={draw, rounded corners=1.5pt, inner sep=4pt, align=left, text width=46mm, minimum height=23mm, fill=black!3, anchor=north west},
+  grid/.style={draw, rounded corners=1.5pt, inner sep=3pt, align=left, text width=38mm, minimum height=15mm, fill=black!8, anchor=north west},
+  rule/.style={draw, rounded corners=1.5pt, inner sep=2.5pt, align=center, text width=21.5mm, minimum height=12mm, fill=black!12, anchor=north west},
+  lab/.style={font=\scriptsize\itshape, text=black!70, align=center}]
+% --- tang 1: thiet ke
+\node[grp] (g1) at (0,0) {\textbf{Graphs and tasks}\\[1pt]
+  Walker-delta shells of SHELLS satellites, +Grid links; torus in the main grids, seam cut as an arm\\
+  tasks: hop field $\cdot$ delay field\\
+  10 seeds; per seed 8 training and 6 evaluation instances};
+\node[grp] (g2) at ([xshift=4mm]g1.north east) {\textbf{Operators: one eigenbasis, one network}\\[1pt]
+  GCN step, one hop per layer\\
+  heat $e^{-t\mathbf{L}}$ and walk $|e^{-it\mathbf{L}}|^{2}$, learned $t$ per layer\\
+  fixed-reach baselines without $t$: PPR ($\alpha$), SGC ($K'$)\\
+  reach of every operator measured on the graph};
+\node[grp] (g3) at ([xshift=4mm]g2.north east) {\textbf{Arms}\\[1pt]
+  $t$ mapping: relu $\cdot$ softplus\\
+  $t$ initialisation: $t_{0}=0.5 \cdot 2$\\
+  capacity: PREL $\cdot$ PSUB parameters\\
+  budget: 200 $\cdot$ 1000 epochs\\
+  graph: torus $\cdot$ seam cut};
+% --- tang 2: cac luoi
+\node[grid] (q1) at ([yshift=-6mm]g1.south west) {\textbf{Grid 1}, 200 epochs\\4 shells, 2 capacities, 4 arms\\NRUNSA runs + NFIXA baseline};
+\node[grid] (q2) at ([xshift=2mm]q1.north east) {\textbf{Grid 2}, 1000 epochs\\3 shells, width 32, 4 arms\\NRUNSB runs + NFIXB baseline + NLAD ladder};
+\node[grid] (q3) at ([xshift=2mm]q2.north east) {\textbf{Seam-cut arm}\\grid 2 repeated on the seam-cut graph\\NSEAM runs};
+\node[grid] (q4) at ([xshift=2mm]q3.north east) {\textbf{Precision check}\\one cell of grid 2, double precision\\NPREC runs};
+% --- tang 3: luat doc
+\node[rule] (r1) at ([yshift=-6mm]q1.south west) {1. constant\\baseline,\\every metric};
+\node[rule] (r2) at ([xshift=2.5mm]r1.north east) {2. pathology\\excluded\\and counted};
+\node[rule] (r3) at ([xshift=2.5mm]r2.north east) {3. floor\\$g<0.05$:\\not rankable};
+\node[rule] (r4) at ([xshift=2.5mm]r3.north east) {4. seed vote\\$\geq 7/10$\\in a cell};
+\node[rule] (r5) at ([xshift=2.5mm]r4.north east) {5. robust\\same in\\every arm};
+\node[rule, fill=black!22] (r6) at ([xshift=2.5mm]r5.north east) {6. inference\\pooled test,\\Holm, MDE};
 \draw[->] (r1) -- (r2); \draw[->] (r2) -- (r3); \draw[->] (r3) -- (r4); \draw[->] (r4) -- (r5); \draw[->] (r5) -- (r6);
+% nhom vai tro
+\draw[black!60] ([yshift=-1.5mm]r1.south west) -- ([yshift=-1.5mm]r3.south east);
+\node[lab, anchor=north] at ([yshift=-2mm]$(r1.south west)!0.5!(r3.south east)$) {filters, applied to every cell};
+\draw[black!60] ([yshift=-1.5mm]r4.south west) -- ([yshift=-1.5mm]r5.south east);
+\node[lab, anchor=north] at ([yshift=-2mm]$(r4.south west)!0.5!(r5.south east)$) {descriptive; 34\% null false positives};
+\draw[black!60] ([yshift=-1.5mm]r6.south west) -- ([yshift=-1.5mm]r6.south east);
+\node[lab, anchor=north, text width=21mm] at ([yshift=-2mm]r6.south) {what the paper\\stands on};
+% mui ten giua cac tang
+\draw[->] (g2.south) -- ([yshift=0.3mm]q2.north -| g2.south);
+\coordinate (rc) at ($(r3.north east)!0.5!(r4.north west)$);
+\draw[->] (q2.south east -| rc) -- ([yshift=0.5mm]rc);
 \end{tikzpicture}
 """
-ops_line = "5 operators\\\\GCN $\\cdot$ heat $\\cdot$ walk\\\\PPR $\\cdot$ SGC" if HAS_FIXED else "3 operators\\\\GCN $\\cdot$ heat $\\cdot$ walk"
-proto = proto.replace("OPSLINE", ops_line).replace("SHELLS", shells_txt).replace("PREL", str(NUM["numReleasedParams"])).replace("PSUB", str(NUM["numSubmittedParams"])).replace("NARMS", str(len(ARMS3)))
+proto = (proto.replace("SHELLS", shells_txt).replace("PREL", str(NUM["numReleasedParams"])).replace("PSUB", str(NUM["numSubmittedParams"]))
+         .replace("NRUNSA", str(NUM["numGridTwelveRuns"])).replace("NFIXA", str(NUM["numFixedRunsTwelve"]))
+         .replace("NRUNSB", str(NUM["numGridThreeRuns"])).replace("NFIXB", str(NUM["numFixedRunsThree"]))
+         .replace("NLAD", str(NUM.get("numLadderRuns", 0))).replace("NSEAM", str(NUM.get("numSeamRuns", 0))).replace("NPREC", str(NUM.get("numPrecRuns", 0))))
 io.open(os.path.join(OUTD, "fig-protocol.tex"), "w").write("% GENERATED by figures/make_figures.py\n" + proto)
 
 # ================================================================ bang tom tat headline

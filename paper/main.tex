@@ -21,7 +21,7 @@
 \usepackage{amsmath,amssymb}
 \usepackage[hyphens]{url}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,fit}
+\usetikzlibrary{arrows.meta,positioning,fit,calc}
 \usepackage[hidelinks]{hyperref}
 
 \setcounter{topnumber}{3}
@@ -564,9 +564,12 @@ numbers with the section that derives each.
 \begin{figure}[htbp]
 \centering
 \input{../figures/out/fig-protocol.tex}
-\caption{The study design. Every cell of the grid, one (task, shell, arm), runs the operators on
-the same instances and seeds; the reading rules are applied in order by one script. A majority
-verdict (rule~4) is reported beside the paired tests of rule~6, never instead of them.}
+\caption{The study design: the design space (top), the grids run on it with their run counts
+(middle), and the six reading rules applied in order by one script (bottom). Every cell of a
+grid, one (task, shell, arm), runs the operators on the same instances and seeds. Rules 1 to 3
+filter cells, rules 4 and 5 are descriptive and kept so that the preliminary verdicts can be
+reproduced, and rule~6 is the inference the paper stands on; a majority verdict is reported
+beside the paired tests, never instead of them.}
 \label{fig:protocol}
 \end{figure}
 
