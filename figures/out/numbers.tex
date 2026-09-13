@@ -65,18 +65,18 @@
 \newcommand{\numFixedGainSgcHopsDouble}{9.9}
 \newcommand{\numFixedGainSgcHopsShellOne}{-0.1}
 \newcommand{\numFixedGainSgcHopsSmall}{67.7}
-\newcommand{\numFixedGapPctDelayDouble}{25.5}
-\newcommand{\numFixedGapPctDelayShellOne}{4.0}
-\newcommand{\numFixedGapPctDelaySmall}{5.4}
-\newcommand{\numFixedGapPctHopsDouble}{24.9}
-\newcommand{\numFixedGapPctHopsShellOne}{52.5}
-\newcommand{\numFixedGapPctHopsSmall}{7.8}
-\newcommand{\numFixedGapWorstPctDelayDouble}{5.4}
+\newcommand{\numFixedGapPctDelayDouble}{25.6}
+\newcommand{\numFixedGapPctDelayShellOne}{4.3}
+\newcommand{\numFixedGapPctDelaySmall}{5.1}
+\newcommand{\numFixedGapPctHopsDouble}{25.0}
+\newcommand{\numFixedGapPctHopsShellOne}{52.2}
+\newcommand{\numFixedGapPctHopsSmall}{8.2}
+\newcommand{\numFixedGapWorstPctDelayDouble}{5.1}
 \newcommand{\numFixedGapWorstPctDelayShellOne}{2.2}
-\newcommand{\numFixedGapWorstPctDelaySmall}{4.7}
-\newcommand{\numFixedGapWorstPctHopsDouble}{3.4}
-\newcommand{\numFixedGapWorstPctHopsShellOne}{36.4}
-\newcommand{\numFixedGapWorstPctHopsSmall}{-5.8}
+\newcommand{\numFixedGapWorstPctDelaySmall}{5.1}
+\newcommand{\numFixedGapWorstPctHopsDouble}{3.8}
+\newcommand{\numFixedGapWorstPctHopsShellOne}{36.0}
+\newcommand{\numFixedGapWorstPctHopsSmall}{-6.6}
 \newcommand{\numFixedLargeMaxGainPct}{6.5}
 \newcommand{\numFixedPathology}{15}
 \newcommand{\numFixedPprDelayDoubleN}{10}
@@ -167,13 +167,17 @@
 \newcommand{\numGthreeWalkRobust}{0}
 \newcommand{\numHasLadder}{1}
 \newcommand{\numHasPrecision}{1}
+\newcommand{\numHasPsixfour}{0}
+\newcommand{\numHasRcut}{0}
 \newcommand{\numHasSeam}{1}
+\newcommand{\numHasSeamGridOne}{0}
 \newcommand{\numHolmThreshold}{0.00208}
 \newcommand{\numLadderBestDelayDouble}{0.139}
 \newcommand{\numLadderBestDelayShellOne}{0.134}
 \newcommand{\numLadderBestDelaySmall}{0.112}
 \newcommand{\numLadderBestHopsDouble}{0.131}
 \newcommand{\numLadderBestHopsShellOne}{0.106}
+\newcommand{\numLadderBestHopsShellOneN}{7}
 \newcommand{\numLadderBestHopsSmall}{0.061}
 \newcommand{\numLadderBestNameDelayDouble}{SGC $K'{=}32$}
 \newcommand{\numLadderBestNameDelayShellOne}{exact PPR $\alpha{=}0.05$}
@@ -181,24 +185,27 @@
 \newcommand{\numLadderBestNameHopsDouble}{SGC $K'{=}32$}
 \newcommand{\numLadderBestNameHopsShellOne}{exact PPR $\alpha{=}0.01$}
 \newcommand{\numLadderBestNameHopsSmall}{SGC $K'{=}8$}
+\newcommand{\numLadderExclMaxPct}{60}
+\newcommand{\numLadderExclMinPct}{0}
 \newcommand{\numLadderGapBestMax}{16.5}
-\newcommand{\numLadderGapBestMin}{1.1}
+\newcommand{\numLadderGapBestMin}{0.9}
 \newcommand{\numLadderGapBestPctDelayDouble}{16.5}
-\newcommand{\numLadderGapBestPctDelayShellOne}{1.1}
-\newcommand{\numLadderGapBestPctDelaySmall}{1.1}
+\newcommand{\numLadderGapBestPctDelayShellOne}{1.5}
+\newcommand{\numLadderGapBestPctDelaySmall}{0.9}
 \newcommand{\numLadderGapBestPctHopsDouble}{8.4}
-\newcommand{\numLadderGapBestPctHopsShellOne}{16.4}
-\newcommand{\numLadderGapBestPctHopsSmall}{8.4}
-\newcommand{\numLadderGapWorstPctDelayDouble}{-6.6}
-\newcommand{\numLadderGapWorstPctDelayShellOne}{-1.1}
-\newcommand{\numLadderGapWorstPctDelaySmall}{1.1}
-\newcommand{\numLadderGapWorstPctHopsDouble}{-17.5}
-\newcommand{\numLadderGapWorstPctHopsShellOne}{-11.8}
-\newcommand{\numLadderGapWorstPctHopsSmall}{-6.4}
+\newcommand{\numLadderGapBestPctHopsShellOne}{16.0}
+\newcommand{\numLadderGapBestPctHopsSmall}{8.2}
+\newcommand{\numLadderGapWorstPctDelayDouble}{-6.5}
+\newcommand{\numLadderGapWorstPctDelayShellOne}{-0.7}
+\newcommand{\numLadderGapWorstPctDelaySmall}{0.9}
+\newcommand{\numLadderGapWorstPctHopsDouble}{-17.6}
+\newcommand{\numLadderGapWorstPctHopsShellOne}{-12.3}
+\newcommand{\numLadderGapWorstPctHopsSmall}{-6.6}
 \newcommand{\numLadderPathology}{80}
 \newcommand{\numLadderRuns}{480}
 \newcommand{\numLadderWorstBehindCells}{5}
 \newcommand{\numLargeSpreadMax}{0.002}
+\newcommand{\numMdeRatioHopsShellOne}{4.3}
 \newcommand{\numPooledAurcDelayDoubleD}{+0.0094}
 \newcommand{\numPooledAurcDelayDoubleHolm}{0.422}
 \newcommand{\numPooledAurcDelayDoubleMde}{0.041}
@@ -259,6 +266,7 @@
 \newcommand{\numPooledMdeMinAurc}{0.014}
 \newcommand{\numPooledMdeSmall}{0.026}
 \newcommand{\numPooledMdeSmallAurc}{0.046}
+\newcommand{\numPooledMinHolmSix}{0.012}
 \newcommand{\numPooledMinPHolmSix}{0.00195}
 \newcommand{\numPooledMinSeeds}{10}
 \newcommand{\numPooledMinSeedsAurc}{10}
@@ -287,8 +295,11 @@
 \newcommand{\numPrecPathologySixtyFour}{3}
 \newcommand{\numPrecPathologyThirtyTwo}{3}
 \newcommand{\numPrecRuns}{30}
+\newcommand{\numPrecSSixtyFour}{8}
+\newcommand{\numPrecSThirtyTwo}{8}
 \newcommand{\numPrecWalkDelta}{0.1552}
 \newcommand{\numPrecWinsSixtyFour}{4:4}
+\newcommand{\numPrelimDiff}{0.020}
 \newcommand{\numPrelimHeatMAE}{0.168}
 \newcommand{\numPrelimParams}{3301}
 \newcommand{\numPrelimSeeds}{3}
@@ -377,6 +388,7 @@
 \newcommand{\numSeamHopsDoubleLeader}{walk}
 \newcommand{\numSeamHopsDoublePW}{0.312}
 \newcommand{\numSeamHopsDoubleRobust}{no}
+\newcommand{\numSeamHopsShellOneArmVerdicts}{walk / n$<$7 / walk / n$<$7}
 \newcommand{\numSeamHopsShellOneGain}{68.8}
 \newcommand{\numSeamHopsShellOneHeat}{0.113}
 \newcommand{\numSeamHopsShellOneLeader}{walk}
@@ -391,6 +403,9 @@
 \newcommand{\numSeamLeadHeat}{13}
 \newcommand{\numSeamLeadWalk}{11}
 \newcommand{\numSeamLeaderAgree}{5}
+\newcommand{\numSeamMissingSeedPathHeat}{3}
+\newcommand{\numSeamMissingSeedPathWalk}{2}
+\newcommand{\numSeamMissingSeeds}{1}
 \newcommand{\numSeamPathology}{93}
 \newcommand{\numSeamPathologyPct}{12.9}
 \newcommand{\numSeamPooledAurcDelayDoubleD}{-0.0026}
@@ -460,6 +475,18 @@
 \newcommand{\numSeamPooledSigHolmAurc}{0}
 \newcommand{\numSeamPooledWalkSig}{1}
 \newcommand{\numSeamPooledWalkSigAurc}{0}
+\newcommand{\numSeamRestoreHeatLargeHolm}{0.422}
+\newcommand{\numSeamRestoreHeatLargeRaw}{0.105}
+\newcommand{\numSeamRestoreHeatLargeWins}{2:8}
+\newcommand{\numSeamRestoreHeatSmallHolm}{0.049}
+\newcommand{\numSeamRestoreHeatSmallRaw}{0.010}
+\newcommand{\numSeamRestoreHeatSmallWins}{2:8}
+\newcommand{\numSeamRestoreWalkLargeHolm}{0.020}
+\newcommand{\numSeamRestoreWalkLargeRaw}{0.004}
+\newcommand{\numSeamRestoreWalkLargeWins}{1:9}
+\newcommand{\numSeamRestoreWalkSmallHolm}{0.029}
+\newcommand{\numSeamRestoreWalkSmallRaw}{0.006}
+\newcommand{\numSeamRestoreWalkSmallWins}{1:9}
 \newcommand{\numSeamRuns}{840}
 \newcommand{\numSeamTlayerOneDoubleHeat}{12.0}
 \newcommand{\numSeamTlayerOneDoubleWalk}{3.9}

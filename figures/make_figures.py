@@ -515,14 +515,15 @@ if g3:
                 spec_best = min(min(R.summarise(R.cell(g3, task, sh, a, "h32l4", 1000))[0][op][0] for op in ("heat", "qw")) for a in ARMS3)
                 M("numFixedBest" + task.capitalize() + SHNAME[sh], "%.3f" % fixed_best)
                 M("numSpecBest" + task.capitalize() + SHNAME[sh], "%.3f" % spec_best)
-                M("numFixedGapPct" + task.capitalize() + SHNAME[sh], round(100 * (fixed_best - spec_best) / fixed_best, 1))
+                fb3, sb3 = float("%.3f" % fixed_best), float("%.3f" % spec_best)     # tu gia tri in trong bang
+                M("numFixedGapPct" + task.capitalize() + SHNAME[sh], round(100 * (fb3 - sb3) / fb3, 1))
                 # review vong 2 (3e): MOT dinh nghia cho ca hai bien: trong moi nhanh lay kernel THAP HON
                 # (dung cot cua bang), roi nhanh tot nhat / te nhat cua dai luong do
                 lower = [min(R.summarise(R.cell(g3, task, sh, a, "h32l4", 1000))[0][op][0] for op in ("heat", "qw")) for a in ARMS3]
                 spec_worst = max(lower)
                 assert abs(min(lower) - spec_best) < 1e-12
                 M("numSpecWorst" + task.capitalize() + SHNAME[sh], "%.3f" % spec_worst)
-                M("numFixedGapWorstPct" + task.capitalize() + SHNAME[sh], round(100 * (fixed_best - spec_worst) / fixed_best, 1))
+                M("numFixedGapWorstPct" + task.capitalize() + SHNAME[sh], round(100 * (fb3 - float("%.3f" % spec_worst)) / fb3, 1))
         both = sum(1 for task in ("hops", "delay") for sh in SHELLS[:3]
                    if all(max(R.summarise(R.cell(g3, task, sh, a, "h32l4", 1000))[0][op][0] for a in ARMS3) <
                           min(np.mean([r["mae"] for r in R.cell_fixed_ops(g3, task, sh, "h32l4", 1000)[o].values()]) for o in ("ppr", "sgc"))
@@ -605,9 +606,12 @@ if g3:
         T.append("\\bottomrule\n\\end{tabular}"); tabfile(fname, T)
         M("numPooledSigHolm" + nm, nsig6); M("numPooledMdeMin" + nm, fm(np.nanmin(pws))); M("numPooledMdeMax" + nm, fm(np.nanmax(pws)))
         M("numPooledMdeSmall" + nm, fm(np.nanmax([pws[0], pws[3]]))); M("numPooledMdeLargeMin" + nm, fm(np.nanmin([pws[1], pws[2], pws[4], pws[5]])))
-        M("numPooledMinPHolmSix", "%.5f" % R.wilcoxon_min_p(10)); M("numPooledHeatLead" + nm, sum(q["diff"] < 0 for q in P)); M("numPooledWalkLead" + nm, sum(q["diff"] > 0 for q in P))
+        M("numPooledMinPHolmSix", "%.5f" % R.wilcoxon_min_p(10)); M("numPooledMinHolmSix", "%.3f" % (6 * R.wilcoxon_min_p(10)))
+        M("numPooledHeatLead" + nm, sum(q["diff"] < 0 for q in P)); M("numPooledWalkLead" + nm, sum(q["diff"] > 0 for q in P))
         M("numPooledMinSeeds" + nm, min(q["n"] for q in P)); M("numPooledThreshold" + nm, "%.4f" % (0.05 / 6))
         M("numPooledCIExcl" + nm, sum(1 for q in P if q["ci_lo"] > 0 or q["ci_hi"] < 0))
+    pd_ = abs(float(NUM["numPrelimWalkMAE"]) - float(NUM["numPrelimHeatMAE"]))
+    M("numPrelimDiff", "%.3f" % pd_); M("numMdeRatioHopsShellOne", "%.1f" % (float(NUM["numPooledHopsShellOneMde"]) / pd_))
     # --- (3b, 3c) san far-node voi hang so far-node dung
     fl = [(task, sh, arm) for (k, task, sh, arm) in cells_ps if k == "aurc" and R.summarise(R.cell(g3, task, sh, arm, "h32l4", 1000), "aurc")[3] == "floor"]
     M("numAurcFloorCells", len(fl)); M("numAurcFloorCellsLarge", sum(1 for (_, sh, _) in fl if sh != "s264")); M("numAurcFloorCellsSmall", sum(1 for (_, sh, _) in fl if sh == "s264"))
@@ -654,7 +658,6 @@ if g3:
             return [r for r in lad if (r["task"], r["shell"], r["op"]) == (task, sh, op) and not r["pathology"] and abs(r[key_] - val) < 1e-9]
         cfgs_l = [("sgc", "sgc_k", K, "SGC $K'{=}%d$" % K) for K in (2, 8, 32, 64)] + [("ppr", "ppr_alpha", a, "PPR exact $\\alpha{=}%g$" % a) for a in (0.2, 0.05, 0.02, 0.01)]
         cols = [(task, sh) for task in ("hops", "delay") for sh in SHELLS[:3]]
-        T = ["\\begin{tabular}{@{}lrrrrrr@{}}\n\\toprule\n& \\multicolumn{3}{c}{hop field} & \\multicolumn{3}{c}{delay field} \\\\\n\\cmidrule(lr){2-4}\\cmidrule(lr){5-7}\noperator & 264 & 1584 & 3168 & 264 & 1584 & 3168 \\\\\n\\midrule"]
         best = {}; cm_ = {}
         for (task, sh) in cols:
             means = []
@@ -667,31 +670,43 @@ if g3:
                 if v: means.append((np.mean(v), op + "_r1", None, len(v)))
             best[(task, sh)] = min(means) if means else (float("nan"), "", None, 0)
             cm_[(task, sh)] = np.mean([r["const_mae"] for r in lad if (r["task"], r["shell"]) == (task, sh)])
-        T.append("constant predictor & %s \\\\" % " & ".join("%.3f" % cm_[c] for c in cols))
-        for op, kf, val, lab in cfgs_l:
-            row = []
-            for (task, sh) in cols:
-                v = [r["mae"] for r in lad_cell(task, sh, op, kf, val)]
-                row.append(("%.3f (%d)" % (np.mean(v), len(v))) if v else "---")
-            T.append("%s & %s \\\\" % (lab, " & ".join(row)))
-        for op, lab in (("ppr", "PPR, round 1 ($\\alpha{=}0.05$, 20 steps)"), ("sgc", "SGC, round 1 ($K'{=}8$)")):
-            row = []
-            for (task, sh) in cols:
-                v = [r["mae"] for r in R.cell_fixed_ops(g3, task, sh, "h32l4", 1000).get(op, {}).values()]
-                row.append(("%.3f (%d)" % (np.mean(v), len(v))) if v else "---")
-            T.append("%s & %s \\\\" % (lab, " & ".join(row)))
-        T.append("\\midrule")
-        T.append("best rung & %s \\\\" % " & ".join("%.3f" % best[c][0] for c in cols))
-        T.append("spectral, worst $t$ arm & %s \\\\" % " & ".join(NUM["numSpecWorst" + t.capitalize() + SHNAME[sh]] for (t, sh) in cols))
-        T.append("spectral, best $t$ arm & %s \\\\" % " & ".join(NUM["numSpecBest" + t.capitalize() + SHNAME[sh]] for (t, sh) in cols))
+        def sdn(v):
+            return ("%.3f $\\pm$ %.3f (%d)" % (np.mean(v), np.std(v, ddof=1) if len(v) > 1 else 0, len(v))) if v else "---"
+        excl = []
+        # review vong 3 (3e): sd + n cho moi rung; bang xep theo KHOI tac vu de vua khung
+        T = ["\\begin{tabular}{@{}lrrr@{}}\n\\toprule\noperator & 264 & 1584 & 3168 \\\\\n\\midrule"]
+        for task in ("hops", "delay"):
+            T.append("\\multicolumn{4}{@{}l}{\\emph{%s field}} \\\\" % task)
+            T.append("constant predictor & %s \\\\" % " & ".join("%.3f" % cm_[(task, sh)] for sh in SHELLS[:3]))
+            for op, kf, val, lab in cfgs_l:
+                row = []
+                for sh in SHELLS[:3]:
+                    v = [r["mae"] for r in lad_cell(task, sh, op, kf, val)]
+                    excl.append(10 - len(v)); row.append(sdn(v))
+                T.append("%s & %s \\\\" % (lab, " & ".join(row)))
+            for op, lab in (("ppr", "PPR, round 1 ($\\alpha{=}0.05$, 20 steps)"), ("sgc", "SGC, round 1 ($K'{=}8$)")):
+                row = []
+                for sh in SHELLS[:3]:
+                    v = [r["mae"] for r in R.cell_fixed_ops(g3, task, sh, "h32l4", 1000).get(op, {}).values()]
+                    excl.append(10 - len(v)); row.append(sdn(v))
+                T.append("%s & %s \\\\" % (lab, " & ".join(row)))
+            T.append("best rung & %s \\\\" % " & ".join("%.3f" % best[(task, sh)][0] for sh in SHELLS[:3]))
+            T.append("spectral, worst $t$ arm & %s \\\\" % " & ".join(NUM["numSpecWorst" + task.capitalize() + SHNAME[sh]] for sh in SHELLS[:3]))
+            T.append("spectral, best $t$ arm & %s \\\\" % " & ".join(NUM["numSpecBest" + task.capitalize() + SHNAME[sh]] for sh in SHELLS[:3]))
+            if task == "hops":
+                T.append("\\addlinespace[3pt]")
+        M("numLadderExclMinPct", round(100 * min(excl) / 10)); M("numLadderExclMaxPct", round(100 * max(excl) / 10))
+        M("numLadderBestHopsShellOneN", len([r for r in lad_cell("hops", "s1584", "ppr", "ppr_alpha", 0.01)]))
         for (task, sh) in cols:
             bestf = best[(task, sh)]
             M("numLadderBest" + task.capitalize() + SHNAME[sh], "%.3f" % bestf[0])
             lab = {"sgc": "SGC $K'{=}%s$", "ppr": "exact PPR $\\alpha{=}%s$", "ppr_r1": "PPR (round 1)", "sgc_r1": "SGC (round 1)"}[bestf[1]]
             M("numLadderBestName" + task.capitalize() + SHNAME[sh], lab % ("%g" % bestf[2]) if "%s" in lab else lab)
+            # review vong 3 (3f): bien tinh tu gia tri DA LAM TRON 3 chu so nhu in trong bang, de doc gia tai tinh duoc
             sb = float(NUM["numSpecBest" + task.capitalize() + SHNAME[sh]]); sw = float(NUM["numSpecWorst" + task.capitalize() + SHNAME[sh]])
-            M("numLadderGapBestPct" + task.capitalize() + SHNAME[sh], round(100 * (bestf[0] - sb) / bestf[0], 1))
-            M("numLadderGapWorstPct" + task.capitalize() + SHNAME[sh], round(100 * (bestf[0] - sw) / bestf[0], 1))
+            bf3 = float("%.3f" % bestf[0])
+            M("numLadderGapBestPct" + task.capitalize() + SHNAME[sh], round(100 * (bf3 - sb) / bf3, 1))
+            M("numLadderGapWorstPct" + task.capitalize() + SHNAME[sh], round(100 * (bf3 - sw) / bf3, 1))
         T.append("\\bottomrule\n\\end{tabular}"); tabfile("tab-ladder.tex", T)
         M("numLadderRuns", len(lad)); M("numLadderPathology", sum(r["pathology"] for r in lad))
         # so o (task, shell) ma ca hai kernel, o MOI nhanh, thang baseline TOT NHAT cua thang
@@ -732,6 +747,7 @@ if g3:
         T.append("\\bottomrule\n\\end{tabular}"); tabfile("tab-seam.tex", T)
         M("numSeamCells", ncmp); M("numSeamLeaderAgree", agree); M("numSeamRuns", len(sc)); M("numSeamPathology", sum(r["pathology"] for r in sc if r["op"] in CORE))
         ARMS_SC = sorted({r["arm"] for r in sc if r["op"] in ("heat", "qw")}, key=lambda a: ARMS.index(a) if a in ARMS else 9)
+        M("numSeamHopsShellOneArmVerdicts", " / ".join(R.summarise(R.cell(sc, "hops", "s1584", a, "h32l4", 1000))[3].replace("<", "$<$") for a in ARMS_SC))
         M("numSeamArms", len(ARMS_SC)); M("numSeamCoreRuns", sum(1 for r in sc if r["op"] in CORE)); M("numSeamFixedRuns", sum(1 for r in sc if r["op"] in ("ppr", "sgc")))
         M("numSeamPathologyPct", round(100.0 * NUM["numSeamPathology"] / max(NUM["numSeamCoreRuns"], 1), 1))
         GS = grid3_tables("mae", "tab-seam-grid.tex", "tab-seam-grid-inference.tex", sc, ARMS_SC)
@@ -774,7 +790,102 @@ if g3:
               for task in ("hops", "delay") for sh in SHELLS[:3] for c in [R.cell(sc, task, sh, "softplus/t0=0.5", "h32l4", 1000)] for op in CORE if c.get(op)]
         M("numSeamFitMaxGap", "%.3f" % max(gp))
         degs = json.load(open(os.path.join(RES, "reach.json")))  # placeholder de giu mot nguon; bac 3 tinh trong fields.py neu can
+    if HAS_SEAM:
+        # --- review vong 3 (3d): seed thieu o cat-seam hop/1584 va do nhay khi khoi phuc no
+        per_seed = {}
+        for arm in ARMS_SC:
+            c = R.cell(sc, "hops", "s1584", arm, "h32l4", 1000)
+            for s_ in sorted(set(c.get("heat", {})) & set(c.get("qw", {}))):
+                per_seed.setdefault(s_, []).append(c["heat"][s_]["mae"] - c["qw"][s_]["mae"])
+        missing = [s_ for s_ in range(10) if s_ not in per_seed]
+        M("numSeamMissingSeeds", ", ".join(str(m) for m in missing) if missing else "none")
+        if len(missing) == 1:
+            ms = missing[0]
+            rows_ms = [r for r in sc if (r["task"], r["shell"], r["seed"]) == ("hops", "s1584", ms) and r["op"] in ("heat", "qw")]
+            M("numSeamMissingSeedPathHeat", sum(1 for r in rows_ms if r["op"] == "heat" and r["pathology"])); M("numSeamMissingSeedPathWalk", sum(1 for r in rows_ms if r["op"] == "qw" and r["pathology"]))
+            d9 = np.array([np.mean(v) for _, v in sorted(per_seed.items())])
+            others = [R.pooled_stats(sc, t_, s2, ARMS_SC, "h32l4", 1000)["p_wilcoxon"] for t_ in ("hops", "delay") for s2 in SHELLS[:3] if (t_, s2) != ("hops", "s1584")]
+            scen = {"WalkLarge": max(np.abs(d9)) * 1.01, "WalkSmall": min(np.abs(d9)) * 0.99, "HeatSmall": -min(np.abs(d9)) * 0.99, "HeatLarge": -max(np.abs(d9)) * 1.01}
+            for nm_, d10 in scen.items():
+                d = np.append(d9, d10); pw_ = R.wilcoxon(d)
+                ph_ = R.holm(others[:1] + [pw_] + others[1:])[1]
+                M("numSeamRestore" + nm_ + "Raw", fp(pw_)); M("numSeamRestore" + nm_ + "Holm", fp(ph_))
+                M("numSeamRestore" + nm_ + "Wins", "%d:%d" % (int((d < 0).sum()), int((d > 0).sum())))
     M("numHasSeam", int(HAS_SEAM))
+
+    # ================================================================ REVIEW VONG 3: float64 cho ba o da chung nhan, doi chung cat ngau nhien, luoi 1 cat seam
+    rev3 = os.path.join(RES, "rev3")
+    p64 = R.load([os.path.join(rev3, "precision_f64_*.csv")]) if os.path.isdir(rev3) else []
+    HAS_P64 = any(r["op"] == "qw" and r["shell"] == "s264" for r in p64)
+    if HAS_P64:
+        T = ["\\begin{tabular}{@{}llrrrrrrr@{}}\n\\toprule\ncell & precision & seeds & $\\bar d$ & 95\\% CI & heat:walk & Wilcoxon $p$ & Holm (6) & $|S|$ per arm \\\\\n\\midrule"]
+        cells64 = [("hops", "s264", g3, "torus", ""), ("delay", "s264", g3, "torus", ""), ("hops", "s1584", sc, "seam cut", "Seam")]
+        for task, sh, rows32, glab, tag in cells64:
+            arms_ = ARMS3 if rows32 is g3 else ARMS_SC
+            q32 = R.pooled_stats(rows32, task, sh, arms_, "h32l4", 1000)
+            have64 = [r for r in p64 if (r["task"], r["shell"]) == (task, sh) and r["seam"] == ("keep" if glab == "torus" else "cut")]
+            if not any(r["op"] == "qw" for r in have64):
+                continue
+            arms64 = sorted({r["arm"] for r in have64}, key=lambda a: ARMS.index(a))
+            q64 = R.pooled_stats(have64, task, sh, arms64, "h32l4", 1000)
+            # Holm(6): thay hang nay bang p f64, 5 hang kia giu p f32 cua cung ho
+            fam = [(t_, s2) for t_ in ("hops", "delay") for s2 in SHELLS[:3]]
+            ps32 = [R.pooled_stats(rows32, t_, s2, arms_, "h32l4", 1000)["p_wilcoxon"] for (t_, s2) in fam]
+            k = fam.index((task, sh)); ps64 = list(ps32); ps64[k] = q64["p_wilcoxon"]
+            h32 = R.holm(ps32)[k]; h64 = R.holm(ps64)[k]
+            S32 = [len(set(R.cell(rows32, task, sh, a, "h32l4", 1000).get("heat", {})) & set(R.cell(rows32, task, sh, a, "h32l4", 1000).get("qw", {}))) for a in arms_]
+            S64 = [len(set(R.cell(have64, task, sh, a, "h32l4", 1000).get("heat", {})) & set(R.cell(have64, task, sh, a, "h32l4", 1000).get("qw", {}))) for a in arms64]
+            lab = "%s %d, %s" % (task, NN[sh], glab)
+            T.append("%s & float32 & %d & $%+.4f$ & $[%+.4f,\\,%+.4f]$ & %d:%d & %s & %s & %s \\\\" % (lab, q32["n"], q32["diff"], q32["ci_lo"], q32["ci_hi"], q32["wins_a"], q32["wins_b"], fp(q32["p_wilcoxon"]), fp(h32), "/".join(map(str, S32))))
+            T.append("& float64 & %d & $%+.4f$ & $[%+.4f,\\,%+.4f]$ & %d:%d & %s & %s & %s \\\\" % (q64["n"], q64["diff"], q64["ci_lo"], q64["ci_hi"], q64["wins_a"], q64["wins_b"], fp(q64["p_wilcoxon"]), fp(h64), "/".join(map(str, S64))))
+            T.append("\\addlinespace[2pt]")
+            key_ = "numPsixfour" + tag + task.capitalize() + SHNAME[sh]
+            M(key_ + "Wins", "%d:%d" % (q64["wins_a"], q64["wins_b"])); M(key_ + "Holm", fp(h64)); M(key_ + "D", "%+.4f" % q64["diff"]); M(key_ + "Arms", len(arms64)); M(key_ + "N", q64["n"])
+            M(key_ + "Survives", "yes" if h64 < 0.05 else "no")
+            M(key_ + "SchangeArms", sum(1 for a_, b_ in zip(S32, S64) if a_ != b_))
+        T.append("\\bottomrule\n\\end{tabular}"); tabfile("tab-precision-certified.tex", T)
+        M("numPsixfourRuns", len(p64))
+    M("numHasPsixfour", int(HAS_P64))
+
+    rc = R.load([os.path.join(rev3, "randomcut_*.csv")]) if os.path.isdir(rev3) else []
+    HAS_RC = any(r["op"] == "qw" for r in rc)
+    if HAS_RC:
+        arms_rc = sorted({r["arm"] for r in rc if r["op"] in ("heat", "qw")}, key=lambda a: ARMS.index(a))
+        T = ["\\begin{tabular}{@{}lrrllllcrr@{}}\n\\toprule\ngraph & $t$ arm & const & GCN & heat & walk & leader & heat:walk & $p_{\\mathrm{W}}$ & gain \\\\\n\\midrule"]
+        for glab, rows_ in (("torus", g3), ("seam cut", sc), ("random cut", rc)):
+            arms_ = [a for a in ARMS if any(r["arm"] == a and r["op"] == "qw" and (r["task"], r["shell"]) == ("hops", "s1584") for r in rows_)]
+            for a in arms_:
+                c = R.cell(rows_, "hops", "s1584", a, "h32l4", 1000); st, cm, gain, vd, ld = R.summarise(c); ps = R.paired_stats(c)
+                T.append("%s & %s & %.3f & %s & %s & %s & %s & %d:%d & %s & %.0f\\%% \\\\" % (glab if a == arms_[0] else "", arm_label(a), cm, pm(st, "gcn"), pm(st, "heat"), pm(st, "qw"), ld, ps["wins_a"], ps["wins_b"], fp(ps["p_wilcoxon"]), 100 * gain))
+            q = R.pooled_stats(rows_, "hops", "s1584", arms_, "h32l4", 1000)
+            T.append("\\multicolumn{10}{@{}l}{\\quad pooled over %d arms: $\\bar d=%+.4f$ $[%+.4f,\\,%+.4f]$, %d:%d, Wilcoxon $p=%s$, MDE %s} \\\\\\addlinespace[2pt]" % (len(arms_), q["diff"], q["ci_lo"], q["ci_hi"], q["wins_a"], q["wins_b"], fp(q["p_wilcoxon"]), fm(R.mde_wilcoxon(q["sd"], q["n"], 0.05))))
+            key_ = "numRcut" + glab.replace(" ", "").capitalize()
+            M(key_ + "Wins", "%d:%d" % (q["wins_a"], q["wins_b"])); M(key_ + "PW", fp(q["p_wilcoxon"])); M(key_ + "D", "%+.4f" % q["diff"]); M(key_ + "Leader", "heat" if q["diff"] < 0 else "walk")
+        T.append("\\bottomrule\n\\end{tabular}"); tabfile("tab-randomcut.tex", T)
+        M("numRcutRuns", len(rc)); M("numRcutPathology", sum(r["pathology"] for r in rc if r["op"] in CORE))
+        gp = [abs(np.mean([r["train_mae"] for r in c.get(op, {}).values()]) - np.mean([r["mae"] for r in c.get(op, {}).values()])) for a in arms_rc for c in [R.cell(rc, "hops", "s1584", a, "h32l4", 1000)] for op in CORE if c.get(op)]
+        M("numRcutFitMaxGap", "%.3f" % max(gp))
+    M("numHasRcut", int(HAS_RC))
+
+    sg1 = R.load([os.path.join(rev3, "seamcut_grid1_*.csv")]) if os.path.isdir(rev3) else []
+    HAS_SG1 = any(r["op"] == "qw" and r["shell"] == "s4400" for r in sg1)
+    if HAS_SG1:
+        arms_g1 = sorted({r["arm"] for r in sg1 if r["op"] in ("heat", "qw")}, key=lambda a: ARMS.index(a))
+        T = ["\\begin{tabular}{@{}lrrrrcrrrr@{}}\n\\toprule\n& \\multicolumn{4}{c}{hop field} & & \\multicolumn{4}{c}{delay field} \\\\\n\\cmidrule{2-5}\\cmidrule{7-10}\n$t$ arm & 264 & 1584 & 3168 & 4400 & & 264 & 1584 & 3168 & 4400 \\\\\n\\midrule"]
+        gbig = []
+        for arm in arms_g1:
+            parts = []
+            for task in ("hops", "delay"):
+                cells_ = [R.summarise(R.cell(sg1, task, sh, arm, "h32l4", 200)) for sh in SHELLS]
+                parts.append(" & ".join(("%.1f" % (100 * g)) + ("" if vd != "floor" else "$^{\\dagger}$") for (_, _, g, vd, _) in cells_))
+                gbig += [100 * cells_[i][2] for i in (1, 2, 3)]
+            T.append("%s & %s & & %s \\\\" % (arm_label(arm), parts[0], parts[1]))
+        T.append("\\bottomrule\n\\end{tabular}"); tabfile("tab-seam-floor.tex", T)
+        M("numSeamGridOneRuns", len(sg1)); M("numSeamGridOneArms", len(arms_g1)); M("numSeamGainLargeMax", round(max(gbig), 1))
+        M("numSeamGridOneFloorLarge", sum(1 for arm in arms_g1 for task in ("hops", "delay") for sh in SHELLS[1:] if R.summarise(R.cell(sg1, task, sh, arm, "h32l4", 200))[3] == "floor"))
+        M("numSeamGridOneLargeCells", len(arms_g1) * 6)
+    M("numHasSeamGridOne", int(HAS_SG1))
+
 
     pr = R.load([os.path.join(rev2, "precision_*.csv")]) if os.path.isdir(rev2) else []
     HAS_PREC = any(r["op"] == "qw" for r in pr)
@@ -794,6 +905,7 @@ if g3:
         M("numPrecMaxDelta", "%.4f" % dmax_all)
         # so voi hieu heat-walk cua o do
         ps32 = R.paired_stats(R.cell(g3, "hops", "s1584", "softplus/t0=0.5", "h32l4", 1000)); ps64 = R.paired_stats(R.cell(pr, "hops", "s1584", "softplus/t0=0.5", "h32l4", 1000))
+        M("numPrecSThirtyTwo", ps32["n"]); M("numPrecSSixtyFour", ps64["n"])
         M("numPrecDiffThirtyTwo", "%+.4f" % ps32["diff"]); M("numPrecDiffSixtyFour", "%+.4f" % ps64["diff"]); M("numPrecWinsSixtyFour", "%d:%d" % (ps64["wins_a"], ps64["wins_b"]))
         M("numPrecPathologySixtyFour", sum(r["pathology"] for r in pr)); M("numPrecPathologyThirtyTwo", sum(r["pathology"] for r in g3 if (r["task"], r["shell"], r["arm"], r["cfg"]) == ("hops", "s1584", "softplus/t0=0.5", "h32l4") and r["op"] in CORE))
     M("numHasPrecision", int(HAS_PREC)); M("numPrecRuns", len(pr))
