@@ -59,22 +59,19 @@ the heat kernel $e^{-t\Lap}$ as a propagation operator on a 1584-satellite low-E
 inter-satellite-link graph. This paper is a reproducibility audit of that claim. Three operators
 sharing one eigenbasis and one network are compared on Walker-delta shells of 264 to 4400
 satellites, two node-field tasks and ten seeds, across arms that vary the parameterisation and
-initialisation of the learned propagation time $t$, the capacity, the training budget and the
-link pattern of the graph, against fixed-reach baselines whose reach is measured on the graph,
-for \numTotalRuns{} plus \numRevTwoRuns{} training runs. Under the preliminary budget no operator
-improves on a constant predictor by more than \numGainLargeMax\% on any shell of 1584 satellites
-or more. With a five-fold budget every shell leaves the floor; on the torus the heat kernel is
-better on the smallest shell on both tasks (ten seeds of ten, Holm-corrected
-$p=\numPooledHopsSmallHolm$) and the paired tests certify no direction on the larger shells,
-where their minimum detectable effect exceeds the observed differences. A per-cell test over
-\numGthreeArmCells{} cells, the previous draft's headline, cannot reject in
-\numPowerCannotReject{} of them at any effect size. Against the best tuned fixed-reach baseline a
-learned $t$ is ahead by \numLadderGapBestPctHopsShellOne\% at 1584 satellites in its best arm
-and behind in its worst. On the graph with the counter-rotating seam cut, which both versions
+initialisation of the learned propagation time $t$, the capacity, the budget and the link pattern
+of the graph, against fixed-reach baselines whose reach is measured, in \numTotalRuns{} plus
+\numRevTwoRuns{} training runs. Under the preliminary budget no operator improves on a constant
+predictor by more than \numGainLargeMax\% on any shell of 1584 satellites or more. With a
+five-fold budget every shell leaves the floor; on the torus the heat kernel is better on the
+smallest shell on both tasks (ten seeds of ten, Holm-corrected $p=\numPooledHopsSmallHolm$) and
+the paired tests certify no direction on the larger shells, where their minimum detectable
+effect exceeds the observed differences. Against the best tuned
+fixed-reach baseline a learned $t$ is ahead by \numLadderGapBestPctHopsShellOne\% at 1584
+satellites in its best arm and behind in its worst. On the seam-cut graph, which both versions
 described and neither had run, the preliminary direction at 1584 satellites is recovered at the
-corrected level and the rest of the grid is unchanged. Which long runs collapse to the constant
-solution changes with the floating-point precision. All code, results and the dated protocol are
-released.
+corrected level. Which long runs collapse changes with the floating-point precision. All code,
+results and the dated protocol are released.
 \end{abstract}
 
 \begin{keyword}
@@ -857,7 +854,7 @@ Of the \numFixedSgcHopsShellOneN{} valid SGC seeds in that cell, \numFixedSgcHop
 sit on the constant solution and \numFixedSgcHopsShellOneEscaped{} escaped it, which is what the
 standard deviation of \numFixedSgcHopsShellOneSd{}, the largest in the grid, records; the PPR
 cell splits \numFixedPprHopsShellOneAtConst{} to \numFixedPprHopsShellOneEscaped{}. A margin
-measured against that cell, as the first draft's \numFixedGapPctHopsShellOne\% was, is a margin
+measured against that cell, as the first draft's ``53\%'' was (\numFixedGapPctHopsShellOne\% under the definition of Table~\ref{tab:fixed}), is a margin
 over a baseline that half-failed to train, and it is withdrawn.
 
 The ladder replaces it. Its best rung per (task, shell), chosen on the same ten seeds the kernels

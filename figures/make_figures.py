@@ -686,7 +686,7 @@ if g3:
         for (task, sh) in cols:
             bestf = best[(task, sh)]
             M("numLadderBest" + task.capitalize() + SHNAME[sh], "%.3f" % bestf[0])
-            lab = {"sgc": "SGC $K'{=}%s$", "ppr": "PPR $\\alpha{=}%s$", "ppr_r1": "PPR (round 1)", "sgc_r1": "SGC (round 1)"}[bestf[1]]
+            lab = {"sgc": "SGC $K'{=}%s$", "ppr": "exact PPR $\\alpha{=}%s$", "ppr_r1": "PPR (round 1)", "sgc_r1": "SGC (round 1)"}[bestf[1]]
             M("numLadderBestName" + task.capitalize() + SHNAME[sh], lab % ("%g" % bestf[2]) if "%s" in lab else lab)
             sb = float(NUM["numSpecBest" + task.capitalize() + SHNAME[sh]]); sw = float(NUM["numSpecWorst" + task.capitalize() + SHNAME[sh]])
             M("numLadderGapBestPct" + task.capitalize() + SHNAME[sh], round(100 * (bestf[0] - sb) / bestf[0], 1))

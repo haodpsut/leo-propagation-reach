@@ -9,52 +9,42 @@
 
 
 Abstract
-A preliminary version of this study reported, from 3 seeds, that a propagation operator built from
-the transition probabilities of a continuous-time quantum walk, |e−itL |2 , outperformed the heat
-kernel e−tL on a 1584-satellite low-Earth-orbit inter-satellite-link graph, and read the trend across
-shell sizes as a ballistic mechanism emerging with scale. This paper is a reproducibility audit of
-that claim. The object under test is the probability kernel, not the unitary propagator whose
-over-smoothing argument recent work has proved; the two kernels are both real, nonnegative and
-row-stochastic and differ only in row profile, which is stated before any result is read. Three
-operators sharing one eigenbasis and one network are compared on Walker-delta shells of 264 to
-4400 satellites, on two node-field tasks, over ten seeds, across arms that vary the parameterisation
-and initialisation of the learned propagation time t, the capacity and the training budget, with
-two reach-matched decoupled baselines, for 1920 plus 720 training runs on one machine. With the
-preliminary budget held fixed, no operator improves on a constant predictor by more than 2.9%
-on any shell of 1584 satellites or more, in any arm, at any capacity; the threshold sensitivity of
-that statement is reported. With a five-fold budget every shell leaves the floor, and the preliminary
-result is not reproduced: under paired tests across seeds, no arm-level cell distinguishes the two
-spectral kernels at the 0.05 level after Holm correction (0 of 24), the heat kernel leads in mean in
-14 cells and the walk kernel in 10, and the seed-majority verdicts the preliminary protocol would
-have declared move by up to 3 seeds when the metric changes from mean error to far-node error.
-What a learned propagation time buys is visible only against fixed-reach propagation, and only in
-the right arm: in its best t arm the better spectral kernel beats personalised-PageRank and power-
-of-adjacency baselines with no learned time by 53% at 1584 and 25% at 3168 satellites on the hop
-field, while in its worst arm the margin is 29% and 3%, and both kernels beat the baselines in every
-arm in 1 of 6 task-scale cells. The ranking at the one scale where the preliminary budget learns
-anything follows the t arm through a seed-level bimodality with indistinguishable escape rates for
-the two kernels. Long training at a fixed learning rate collapses 12.1% of runs to the constant
-solution, which is counted rather than dropped. The released artifact of the preliminary version is
-shown to have used a different configuration from its text. All code, results and the dated protocol
-are released.
+A preliminary version of this study reported, from 3 seeds, that the transition-probability kernel of a
+continuous-time quantum walk, |e−itL |2 , outperforms the heat kernel e−tL as a propagation operator
+on a 1584-satellite low-Earth-orbit inter-satellite-link graph. This paper is a reproducibility audit
+of that claim. Three operators sharing one eigenbasis and one network are compared on Walker-
+delta shells of 264 to 4400 satellites, two node-field tasks and ten seeds, across arms that vary the
+parameterisation and initialisation of the learned propagation time t, the capacity, the budget and
+the link pattern of the graph, against fixed-reach baselines whose reach is measured, in 2920 plus
+810 training runs. Under the preliminary budget no operator improves on a constant predictor by
+more than 2.9% on any shell of 1584 satellites or more. With a five-fold budget every shell leaves
+the floor; on the torus the heat kernel is better on the smallest shell on both tasks (ten seeds of ten,
+Holm-corrected p = 0.012) and the paired tests certify no direction on the larger shells, where their
+minimum detectable effect exceeds the observed differences. Against the best tuned fixed-reach
+baseline a learned t is ahead by 16.4% at 1584 satellites in its best arm and behind in its worst. On
+the seam-cut graph, which both versions described and neither had run, the preliminary direction
+at 1584 satellites is recovered at the corrected level. Which long runs collapse changes with the
+floating-point precision. All code, results and the dated protocol are released.
 Keywords: LEO constellations, inter-satellite links, graph neural networks, spectral propagation,
 quantum walks, reproducibility, evaluation methodology
 
 
 
-  ∗
-      Corresponding author.
-      Email address: haodp@dau.edu.vn (Phuc Hao Do)
-1. Introduction
-     The inter-satellite-link (ISL) graph of a low-Earth-orbit (LEO) mega-constellation is large and
+1. Introduction
+
+    The inter-satellite-link (ISL) graph of a low-Earth-orbit (LEO) mega-constellation is large and
 nearly regular, and its links across the seam and the polar regions come and go [1, 2]. Learned
 models that propagate information over this graph have been proposed for routing [3, 4] and for
 connectivity decisions [5]. At each layer such a model applies a propagation operator Φ(L) to node
 features and then a shared nonlinearity [6, 7], so the choice of operator is a design decision whose
 consequences grow with the graph.
-     Three operators span the design space studied here. The local step of a graph convolutional
-network [6], equation (1) below, moves information
-                                             √        one hop per layer. The heat kernel e−tL moves
+    Three operators span the design space studied here. The local step of a graph convolutional
+network [6], equation (1) below, moves information one hop per layer. The heat kernel e−tL moves
+
+  ∗
+      Corresponding author.
+      Email address: haodp@dau.edu.vn (Phuc Hao Do)
+                                             √
 it diffusively, over a range that grows like t [8]. The transition-probability kernel of a continuous-
 time quantum walk [9], |e−itL |2 , is a real, row-stochastic matrix whose rows spread ballistically,
 over a range that grows like t, and it can be dropped into the same layer in place of the heat
@@ -75,37 +65,57 @@ two kernels or of the way they were evaluated, and it answers by making explicit
 quantities the preliminary comparison left implicit: the training budget relative to graph size, the
 parameterisation and initialisation of the learned propagation time t, the capacity, the number of
 seeds, and the inferential rule by which a winner is declared.
-     The contribution is the audit and what it finds.
+     The contribution is the audit and what it finds, and what it adds to the correction of one
+unpublished report is a method for reading such comparisons that is itself measured: the false-
+positive rate of the vote rule the preliminary protocol used, the minimum effect the paired tests
+can detect, the reach of every operator on the graph, and the sensitivity of a single run to the
+arithmetic.
+
    • A protocol in which the operators share one eigendecomposition, one network, one parameter
-     count and one training loop; in which budget, t parameterisation, t initialisation and capacity
-     are arms; in which two reach-matched decoupled propagation baselines, personalised PageR-
-     ank and a power of the normalised adjacency, separate “spectral operator” from “longer reach”;
-     and in which every reading rule, including the paired tests and the multiplicity correction, is
-     stated with its operating characteristics before a verdict is read (Section 4).
+     count and one training loop; in which budget, t parameterisation, t initialisation, capacity
+     and the link pattern of the graph are arms; in which fixed-reach decoupled propagation
+     baselines, personalised PageRank and powers of the normalised adjacency, are run over a
+     ladder whose reach is measured on the graph and bracket the learned reach of the kernels;
+     and in which every reading rule is stated with its operating characteristics, including the
+     minimum detectable effect of the corrected paired test, before a verdict is read (Section 4).
+
    • Under the preliminary budget of 200 epochs, no operator improves on the constant predictor
      by more than 2.9% on any shell of 1584 satellites or more, in any arm, at either capacity
      (Section 5.1); the sensitivity of this statement to the floor threshold is tabulated. On the one
      shell where learning occurs the heat-versus-walk ranking changes with the t arm, through a
      seed-level bimodality in which the two kernels escape the constant solution at indistinguishable
      rates (Section 5.2).
-   • With a budget of 1000 epochs every shell leaves the floor and the preliminary result is not
-     reproduced. Under paired sign and Wilcoxon tests across seeds with Holm correction, no
+
+   • With a budget of 1000 epochs every shell leaves the floor. On the torus the heat kernel is
+     better on the 264-satellite shell on both tasks (ten seeds of ten, Holm-corrected p = 0.012),
+     and on the larger shells the paired tests certify no direction, with a minimum detectable effect
+     that is stated and is larger than the observed differences (Section 5.3). A per-cell test over
+     24 arm-level cells, the first draft’s headline, cannot reject in 18 of them at any effect size and
+     is reported as description. Against the best tuned fixed-reach baseline, a learned propagation
                                                   2
-     arm-level cell separates the two kernels at the 0.05 level (Section 5.3); the seed-majority rule
-     the preliminary protocol used would have declared winners, and those verdicts move by up to
-     3 seeds when the metric changes (Section 5.4). Long training collapses 12.1% of runs to the
-     constant solution, counted rather than dropped (Section 5.6).
+     time in its best arm is ahead by 16.4% at 1584 satellites on the hop field and behind in its
+     worst arm; the first draft’s 53% margin was measured against a baseline that had half-failed
+     to train.
+
+   • On the seam-cut graph, which both versions of this study said they used and neither had run,
+     the preliminary direction at 1584 satellites on the hop field is recovered at the corrected level,
+     while the other five (task, shell) pairs read as on the torus (Section 5.5).
+
+   • Long training collapses 12.1% of runs to the constant solution, counted rather than dropped,
+     and which runs collapse depends on the floating-point precision: the same seed escapes in one
+     precision and collapses in the other (Section 5.7).
 
    • The released artifact of the preliminary version used a network of 3301 parameters while its
-     released code defaults to 612, with no script for the experiment in question (Section 7).
-
-    Section 2 places the operators and the setting in the literature. Section 3 defines the graphs
-(Section 3.1), the operators (Section 3.2) and the network and tasks (Section 3.3). Section 4
-states the protocol and the reading rules (Section 4.2). Section 5 reports the grids and their cost
-(Section 5.7). Section 6 interprets them, Section 7 lists what limits them, and Section 8 concludes.
+     released code defaults to 612, with no script for the experiment in question; and both versions
+     misread the generator’s seam flag, so that every main-grid run of this audit is on the full torus
+     (Section 7).
+   Section 2 places the operators and the setting in the literature. Section 3 defines the graphs
+(Section 3.1), the operators (Section 3.2) and the network and tasks (Section 3.3). Section 4 states
+the protocol and the reading rules (Section 4.2). Section 5 reports the grids, the seam-cut arm
+(Section 5.5) and their cost (Section 5.8). Section 6 interprets them, Section 7 lists what limits
+them, and Section 8 concludes.
 
 2. Related work
-
 Propagation operators and their reach. Spectral graph convolutions began as polynomial filters of
 the Laplacian [15, 7]; the graph convolutional network of Kipf and Welling [6] keeps the first-
 order term and applies a normalised adjacency once per layer, so depth bounds reach. Stacking
@@ -129,7 +139,8 @@ place walk-derived operators inside trainable graph models. GraphQWalk [14] buil
 position-independent structural embeddings from walk transition probabilities. CTQWformer [13]
 learns the walk Hamiltonian and feeds final-time probabilities into a graph transformer. CTQW-
 GNN [12], a preprint at the time of writing, uses the unitary propagator itself in feature space
-and proves that, because its eigenvalues lie on the unit circle, no frequency is damped and the
+                                                  3
+and proves that, because its eigenvalues lie on the unit circle, no frequency is damped and the
 Dirichlet energy of the features cannot decay exponentially with depth. That result concerns the
 unitary operator acting on features. The operator studied here is the transition-probability kernel
 |e−itL |2 , a real nonnegative matrix that shares the ballistic profile of the walk but not the norm-
@@ -137,28 +148,18 @@ preserving property; the distinction matters for interpreting the results (Secti
 on communication networks have also been used directly, for instance the Hadamard-walk model
 for network identification of Liang et al. [29].
 
-
-                                                 3
-Table 1: The four shells. All use +Grid links, a 70◦ polar cutoff and a seam cut. The two largest are scale-ups of
-the Starlink shell-1 geometry and are not deployed constellations.
-    satellites   planes    per plane    incl. (◦ )   alt. (km)    note
-         264         24            11          53           550   main scale of the preliminary version
-        1584         72            22          53           550   Starlink shell-1 geometry [2]
-        3168         72            44          53           550   scale-up, synthetic
-        4400        100            44          53           550   scale-up, synthetic
-
-
 Graph learning on LEO constellations. Handley [30] first argued that inter-satellite routing in a
 mega-constellation is a latency question, Bhattacherjee and Singla [1] fix the +Grid inter-satellite
 topology that most later work assumes, Kassing et al. [31] provide the Hypatia simulator for such
 networks, and del Portillo et al. [2] compare the announced constellations, including the Starlink
-shell whose geometry the 1584-satellite graph here reproduces. Learned models on this graph include
-the link-identified routing architecture of Zhang et al. [3], the duality-guided graph learning for
-joint connectivity and routing of Gu et al. [4], and machine-learning-driven cellular-satellite multi-
-connectivity [5]. None of these compares propagation operators under a common parameterisation
-of reach, which is the gap this study addresses. The tasks used here are deliberately decoupled from
-any particular routing or traffic-engineering system, so that the propagation question is isolated
-from questions of load.
+shell whose geometry the 1584-satellite graph here reproduces. Learned models on this graph
+include the link-identified routing architecture of Zhang et al. [3], the duality-guided graph learning
+for joint connectivity and routing of Gu et al. [4], and machine-learning-driven cellular-satellite
+multi-connectivity [5]. None of these compares propagation operators under one training protocol
+with the reach of every operator, learned or fixed, measured on the graph rather than asserted,
+which is the gap this study addresses. The tasks used here are deliberately decoupled from any
+particular routing or traffic-engineering system, so that the propagation question is isolated from
+questions of load.
 
 Evaluation pitfalls. Shchur et al. [32] showed that the ranking of graph neural network architectures
 on standard benchmarks changes with the data split and the seed, Henderson et al. [33] made
@@ -174,29 +175,46 @@ the training budget relative to graph size and the parameterisation of the learn
 3.1. Constellation graphs
     Each graph is a snapshot of a Walker-delta shell. Satellite positions follow circular-orbit prop-
 agation in an Earth-centred inertial frame; inter-satellite links follow the +Grid pattern [1], two
-intra-plane and two inter-plane links per satellite, with inter-plane links suppressed above 70◦
-latitude and across the counter-rotating seam. The graph is restricted to its largest connected com-
-ponent. Four shells are used (Table 1). The 264-satellite shell is the main scale of the preliminary
-version; the 1584-satellite shell reproduces the geometry of the first Starlink shell [2], 72 planes of
-22 satellites at 53◦ and 550 km; the 3168- and 4400-satellite shells are scale-ups of that geometry,
-72 planes of 44 and 100 planes of 44, and are synthetic in the sense that no operator flies them.
-They exist to make the diameter grow.
+intra-plane and two inter-plane links per satellite. The generator suppresses inter-plane links above
+70◦ latitude and can remove them across the counter-rotating seam. In every run of the two main
+grids the seam links are kept, and at 53◦ inclination no satellite reaches 70◦ , so every snapshot of the
+main grids is the full 4-regular torus of P × S satellites and 2N links; snapshots differ only in their
+link lengths. The preliminary version and the first drafts of this paper stated that the seam was cut;
+it was not, in either, and Section 7 records how the generator’s flag was misread. A seam-cut arm,
+in which the inter-plane links between the last and the first plane are removed so that 2S satellites
+drop to degree three and the graph is no longer vertex-transitive, is run at the larger budget and
+reported in Section 5.5. The graph is restricted to its largest connected component. Four shells are
+used (Table 1). The 264-satellite shell is the main scale of the preliminary version; the 1584-satellite
+shell reproduces the geometry of the first Starlink shell [2], 72 planes of 22 satellites at 53◦ and
+                                                   4
+550 km; the 3168- and 4400-satellite shells are scale-ups of that geometry, 72 planes of 44 and 100
+planes of 44, and are synthetic in the sense that no operator flies them. They exist to make the
+diameter grow.
+
+Table 1: The four shells. All use +Grid links; the main grids keep the seam links, so each snapshot is a 4-regular
+torus, and the seam-cut arm of Section 5.5 removes them. The two largest are scale-ups of the Starlink shell-1
+geometry and are not deployed constellations.
+    satellites   planes    per plane    incl. (◦ )   alt. (km)    note
+         264         24            11          53           550   main scale of the preliminary version
+        1584         72            22          53           550   Starlink shell-1 geometry [2]
+        3168         72            44          53           550   scale-up, synthetic
+        4400        100            44          53           550   scale-up, synthetic
+
     Each training or evaluation instance draws a snapshot time uniformly over the orbital period
 and a destination satellite uniformly over the component. Instance construction is seeded, so every
 instance is reproducible from its index.
 
-                                                        4
-3.2. Three operators on one eigenbasis
+3.2. Three operators on one eigenbasis
     Let L = D − A be the combinatorial Laplacian of the snapshot, with eigendecomposition
 L = U diag(λ) U⊤ computed once per instance and shared by all operators. The three operators
 are
 
-                               Φgcn = D̃−1/2 (A + I)D̃−1/2 ,                                        (1)
-                                              (︂    )︂
-                            Φheat (t) = U diag e−tλ U⊤ = e−tL ,                                     (2)
-                                        ⃓      (︂      )︂ ⃓2 ⃓      ⃓2
-                            Φwalk (t) = ⃓U diag e−itλ U⊤ ⃓ = ⃓e−itL ⃓ ,                             (3)
-                                        ⃓                 ⃓
+                                  Φgcn = D̃−1/2 (A + I)D̃−1/2 ,                                               (1)
+                                                 (︂    )︂
+                               Φheat (t) = U diag e−tλ U⊤ = e−tL ,                                            (2)
+                                           ⃓      (︂      )︂ ⃓2 ⃓      ⃓2
+                               Φwalk (t) = ⃓U diag e−itλ U⊤ ⃓ = ⃓e−itL ⃓ ,                                    (3)
+                                           ⃓                 ⃓
 
 
 where the square in (3) is taken entrywise on the modulus, so that [Φwalk ]ij is the probability that
@@ -217,26 +235,7 @@ its cleanest form: at equal t the walk reaches farther, and its reach grows fast
 that translates into a better propagation operator once t is learned is the empirical question of this
 paper.
 
-3.3. Network, parameterisation of t, and tasks
-                                                                 (︂              )︂
-     The network has K layers, each computing H(ℓ+1) = σ Φ(ℓ) H(ℓ) W(ℓ) with a ReLU nonlin-
-earity and a linear read-out to one scalar per node. For the two spectral operators, each layer
-carries its own scalar propagation time tℓ , trained jointly with the weights. The preliminary version
-parameterised it as tℓ = relu(θℓ ) with θℓ initialised at 0.5. Section 4 explains why this is an arm of
-the present study and adds tℓ = softplus(θℓ ), which keeps tℓ > 0 with a live gradient, initialised so
-that the two parameterisations start at the same value. The GCN operator has no t.
-     The input to every node is two features, an indicator of the destination and the normalised
-degree. Two node-field targets are used. With d the destination, h(i, d) the geodesic hop count and
-τ (i, d) the shortest-path propagation delay computed on the inter-satellite link lengths, the targets
-are
-                                      h(i, d)                       τ (i, d)
-                            yihop =              ,     yidelay =               ,                    (4)
-                                    maxj h(j, d)                 maxj τ (j, d)
-so that both lie in [0, 1] and the constant predictor has the same meaning on every shell. The hop
-field is the task of the preliminary version. Both fields in (4) require the model to move a single
-seeded signal across the graph, which is the propagation question in isolation; neither involves traffic
-or load. The metric is the mean absolute error (MAE) over nodes on held-out instances.
-                                                   5
+                                                        5
                                                              heat, t=5                                                heat e −tL
                          0.12                                walk, t=5
 
@@ -274,6 +273,38 @@ on logarithmic axes; the slopes fitted over t ∈ [7, 40] are 1.00 for the heat 
 root-mean-square log residuals of 0.000 and 0.000.
 
 
+3.3. Network, parameterisation of t, and tasks
+                                                                 (︂              )︂
+     The network has K layers, each computing H(ℓ+1) = σ Φ(ℓ) H(ℓ) W(ℓ) with a ReLU nonlin-
+earity and a linear read-out to one scalar per node. For the two spectral operators, each layer
+carries its own scalar propagation time tℓ , trained jointly with the weights. The preliminary version
+parameterised it as tℓ = relu(θℓ ) with θℓ initialised at 0.5. Section 4 explains why this is an arm of
+the present study and adds tℓ = softplus(θℓ ), which keeps tℓ > 0 with a live gradient, initialised so
+that the two parameterisations start at the same value. The GCN operator has no t.
+     The input to every node is two features, an indicator of the destination and the normalised
+degree. Two node-field targets are used. With d the destination, h(i, d) the geodesic hop count and
+τ (i, d) the shortest-path propagation delay computed on the inter-satellite link lengths, the targets
+are
+                                      h(i, d)                       τ (i, d)
+                            yihop =              ,     yidelay =               ,                    (4)
+                                    maxj h(j, d)                 maxj τ (j, d)
+so that both lie in [0, 1] and the constant predictor has the same meaning on every shell. The hop
+field is the task of the preliminary version. Both fields in (4) require the model to move a single
+seeded signal across the graph, which is the propagation question in isolation; neither involves traffic
+or load. The metric is the mean absolute error (MAE) over nodes on the evaluation instances of a
+seed, which are drawn from the same generator as its training instances with a different destination
+and snapshot time.
+     One property of the torus must be stated here because it decides what the evaluation instances
+measure. A torus is vertex-transitive, so the hop field from any destination is the same field up to
+a relabelling of the nodes, and the network, whose only inputs are the destination indicator and
+the (constant) normalised degree, is equivariant to that relabelling. On the hop field the evaluation
+instances of the main grids are therefore copies of the training instances, and the training error
+equals the test error exactly (Table 13); the hop-field task on the torus is a fitting problem on one
+                                                                              6
+field, not a generalisation problem. The delay field depends on the link lengths, which vary with the
+snapshot, and differs between instances. On the seam-cut graph the destination’s position relative
+to the seam changes the hop field, and the instances differ on both tasks (Section 5.5).
+
 4. Protocol
 
 4.1. Parameter matching and the arms
@@ -288,93 +319,217 @@ cell evaluate on sixty distinct snapshot-destination pairs; seed-to-seed dispers
 instance-to-instance variation.
      Four quantities are arms rather than fixed choices.
 
-                         • Parameterisation of t. A pilot run under the released parameterisation showed the learned
-                           tℓ going negative in the second and third layers, where relu(tℓ ) = 0 turns the propagator into
-                           the identity and stops its gradient, so that a model reported as three or four layers of spectral
-                           propagation was propagating in one. The softplus parameterisation removes this; the relu
-                           parameterisation is kept as a control so that the preliminary configuration is one of the arms.
+   • Parameterisation of t. A pilot run under the released parameterisation showed the learned
+     tℓ going negative in the second and third layers, where relu(tℓ ) = 0 turns the propagator into
+     the identity and stops its gradient, so that a model reported as three or four layers of spectral
+     propagation was propagating in one. The softplus parameterisation removes this; the relu
+     parameterisation is kept as a control so that the preliminary configuration is one of the arms.
 
-                         • Initialisation of t. t0 ∈ {0.5, 2}, since the same pilot showed the learned reach, and with it
-                           the operator ranking, depending on where t starts.
+   • Initialisation of t. t0 ∈ {0.5, 2}, since the same pilot showed the learned reach, and with it
+     the operator ranking, depending on where t starts.
 
-                         • Capacity. The two configurations above.
+   • Capacity. The two configurations above.
 
-                         • Budget. 200 epochs, the preliminary value, held fixed across scales; and 1000 epochs for the
-                           second grid.
+   • Budget. 200 epochs, the preliminary value, held fixed across scales; and 1000 epochs for the
+     second grid.
 
-                                                                              6
-Grid 1 runs both capacities, all four t arms, four shells, two tasks, three operators and ten seeds at
+   • Graph. The torus of the main grids, and the seam-cut graph, run at 1000 epochs in all four
+     t arms (Section 5.5).
+
+Grid 1 runs both capacities, all four t arms, four shells, two tasks, three operators and ten seeds at
 200 epochs (1920 runs). Grid 2 runs the width-32 configuration at 1000 epochs on the three smaller
-shells with 4 t arms (720 runs). All runs were executed on one machine, one GPU per arm, with
-the eigendecomposition of each instance cached in single precision and shared, so that every arm
-sees bit-identical eigenpairs; training already casts the eigenpairs to single precision, and on a test
-cell the cached and recomputed runs agreed to 16 significant digits.
+shells with 4 t arms (720 runs). With the fixed-reach baselines below (160 runs at 200 epochs and
+120 at 1000), the two main grids comprise 2920 training runs; the baseline ladder, the seam-cut
+arm and the precision check of Section 5.7 add 480, 300 and 30. All runs were executed on one
+machine, one GPU per arm, with the eigendecomposition of each instance cached in single precision
+and shared, so that every arm sees bit-identical eigenpairs. Whether single precision is adequate is
+not settled by that identity; it is tested directly by rerunning one cell entirely in double precision
+(Section 5.7).
 
-Reach-matched decoupled baselines. A comparison of the three operators above confounds “spectral”
-with “long-reaching”: the GCN step reaches one hop per layer, the spectral kernels reach as far as
-their learned t allows. Two further operators, run at both budgets on the width-32 configuration,
-separate the two. Both decouple propagation from transformation in the sense of SGC [19] and
-personalised-PageRank propagation [20], have fixed reach and no learned t, and use the same
-network:
+
+
+
+                                                  7
+Fixed-reach decoupled baselines, and their measured reach. A comparison of the three operators
+above confounds “spectral” with “long-reaching”: the GCN step reaches one hop per layer, the
+spectral kernels reach as far as their learned t allows. Two further operators, run at both budgets
+on the width-32 configuration, separate the two. Both decouple propagation from transformation in
+the sense of SGC [19] and personalised-PageRank propagation [20], have fixed reach and no learned
+t, and use the same network:
                        K
-                                                                                   ′
+                                                                               ′
                       ∑︂
-           ΦPPR = α         (1 − α)k Âk ,   α = 0.05, K = 20;           ΦSGC = ÂK ,   K ′ = 8,   (5)
+           ΦPPR = α         (1 − α)k Âk ,   α = 0.05, K = 20;    ΦSGC = ÂK ,       K ′ = 8,      (5)
                       k=0
 
-with Â the normalised adjacency of (1) and ΦPPR renormalised to row sums of one. Their effective
-reach is of the order of 1/α and K ′ hops respectively, comparable to the learned reach of the spectral
-kernels at 1000 epochs (Section 5.3).
+with Â the normalised adjacency of (1) and ΦPPR renormalised to row sums of one. The values
+of α, K and K ′ in (5) were fixed by assertion in the first draft, on the reasoning that 1/α and K ′
+hops are “of the order of” the learned reach. That reasoning confuses the support of a propagator
+with where its mass sits: on a lattice, K ′ steps of a normalised adjacency place their mass at about
+√
+   K ′ hops, not K ′ . Reach is therefore measured, not asserted. For one row of each propagator,
+Table 2 reports the expected hop distance from the source under the row’s probability mass, per
+layer at the learned t of Table 10 for the two kernels and composed over the four layers. At 1584
+satellites the heat kernel’s layers reach 6.4 to 5.5 hops on average and the walk kernel’s up to 11.8,
+while the baselines of (5) reach 2.5 (PPR) and 2.8 (SGC) hops per layer: the first-draft baselines
+reached about half as far as the kernels they were said to match, and the truncation at K = 20
+steps caps the PPR reach whatever α says. The comparison is therefore run over a ladder that
+brackets the learned reach on every shell: SGC with K ′ ∈ {2, 8, 32, 64} and PPR computed exactly,
+α(I − (1 − α)Â)−1 , with α ∈ {0.2, 0.05, 0.02, 0.01}, whose per-layer reach runs from 1.3 to 8.8 hops
+(Table 2). Every rung is run at 1000 epochs, three shells, both tasks, ten seeds (480 runs), and the
+best rung per (task, shell) is the baseline the spectral kernels are compared with in Section 5.3; the
+first-draft values are kept in the ladder and in Table 14 so that their result remains checkable.
 
 4.2. Reading rules, declared before the runs, with their operating characteristics
     Six rules govern how a cell, one (task, shell, arm) combination, is read. The first five were fixed
-before the first grid was launched, and two of them were tightened after the first runs exposed a
-gap; both changes are dated in the repository and stated here. The sixth was added after external
-review of a draft showed that the fifth, as stated, had a false-positive rate the draft never computed.
-  1. Constant baseline. Every cell reports the MAE of the predictor that outputs the mean of
-     the target. Whether an operator beats it is a result, never a filter.
+before the first grid was launched, and two of them were tightened after the first runs exposed a gap;
+both changes are dated in the repository and stated here. The sixth was added after external review
+of a draft showed that the fourth, as stated, had a false-positive rate the draft never computed, and
+its unit of inference was changed after a second review showed that the first form of the rule had,
+by construction, almost no power; both forms are reported.
+  1. Constant baseline. Every cell reports, on every metric it is scored on, the error of the
+     predictor that outputs the mean of the target, in the tables themselves. Whether an operator
+     beats it is a result, never a filter.
   2. Pathology. A run is excluded only for a training pathology: a non-finite loss, or a loss that
      rises by more than 1% between successive thirds of training. Excluded runs are counted next
-     to every number they affect, and Section 5.6 reports whether each excluded run had left the
+     to every number they affect, and Section 5.7 reports whether each excluded run had left the
      constant solution before collapsing, since exclusion after collapse removes non-escaping runs
      preferentially. A run whose loss is flat from the start because it sits on the constant solution
      is a plateau, a legitimate outcome, and is kept. The first draft of this rule required a 10%
      loss drop and would have discarded plateaus as failures; it was corrected when the first grid
      produced them.
-  3. Floor. Let ēop be the mean MAE of an operator over its valid seeds in a cell and ē0 that of
-     the constant predictor. The cell’s gain is
-                                                    ē0 − minop ēop
-                                               g=                    ,                             (6)
-                                                           ē0
-     and the cell is rankable only if g ≥ 0.05. This threshold was chosen after the first completed
-     cells, all on the 4400-satellite shell, showed the three operators’ means within 0.002 of one
-     another and of the constant baseline while the majority rule below still declared a winner.
-     Because the value was set with that knowledge, every statement that depends on it is repeated
-     at g ∈ {0.01, 0.02, 0.05, 0.10} in Table 15.
-                                                      7
-      one cell = (task, shell, arm); grid 1: 200 epochs, every arm; grid 2: 1000 epochs, submitted capacity, 4 t arms
+                                                    8
+Table 2: Measured reach: expected hop distance from the source under one row of each propagator, on the torus of
+each shell. For the two kernels the reach is evaluated at the learned t of Table 10, layer by layer and composed over
+the four layers; for the fixed-reach operators it is a property of α or K ′ alone. The first-draft baselines of (5) are the
+rows marked round 1.
+     operator                                                    264                   1584                   3168
+     eccentricity of the destination                    17                                46                     57
+     per layer, at the learned t of Table 10
+     GCN step                                          0.8                           0.8                     0.8
+     heat, layers 1–4                      3.8/2.8/2.1/1.7               6.4/5.1/4.9/5.6         7.3/5.4/4.4/5.1
+     walk, layers 1–4                      3.3/2.9/3.2/3.2              4.6/5.9/6.5/11.8        5.7/10.9/4.0/8.4
+     PPR, α=0.05, 20 steps (round 1)                   2.5                           2.5                     2.5
+     PPR exact, α=0.2                                  1.6                           1.6                     1.6
+     PPR exact, α=0.05                                 3.5                           3.8                     3.8
+     PPR exact, α=0.02                                 5.1                           6.0                     6.2
+     PPR exact, α=0.01                                 6.3                           8.1                     8.8
+     SGC, K ′ =1                                       0.8                           0.8                     0.8
+     SGC, K =2′                                        1.3                           1.3                     1.3
+     SGC, K ′ =8                                       2.8                           2.8                     2.8
+     SGC, K ′ =32                                      5.3                           5.7                     5.7
+     SGC, K =64
+              ′                                        6.7                           7.9                     8.1
+     composed over four layers
+     GCN                                               1.9                              1.9                     1.9
+     heat                                              5.3                             10.5                    11.4
+     walk                                              5.3                             12.7                    14.0
+     PPR, α=0.05, 20 steps                             5.2                              5.6                     5.6
+     SGC, K ′ =8                                       5.3                              5.7                     5.7
+     SGC, K ′ =64                                      8.6                             13.5                    15.9
 
-                        5 operators
-                                               4 shells              2 tasks             10 seeds
-                          GCN ·
-                                             264 · 1584 ·          hop · delay           per cell
-                        heat · walk
-                                             3168 · 4400
-                        PPR · SGC
-                                                                    capacity
-                         t mapping          t initialisation                               budget
-                                                                   612 · 3301
-                       relu · softplus        t0 = 0.5 · 2                           200 · 1000 epochs
-                                                                    params
 
-                                                               reading rules, in order
-                   1. constant                                             4. winner
-                                      2. pathology        3. floor                           5. robust
-                     baseline                                                mean,
-                                        excluded         g < 0.05:                            same in
-                      always                                                ≥ 7/10
-                                      and counted       not rankable                         every arm
-                      shown                                               seeds, and p
+   3. Floor. Let ēop be the mean MAE of an operator over its valid seeds in a cell and ē0 that of
+      the constant predictor. The cell’s gain is
+                                                          ē0 − minop ēop
+                                                    g=                     ,                                           (6)
+                                                                 ē0
+      and the cell is rankable only if g ≥ 0.05. This threshold was chosen after the first completed
+      cells, all on the 4400-satellite shell, showed the three operators’ means within 0.002 of one
+      another and of the constant baseline while the majority rule below still declared a winner.
+      Because the value was set with that knowledge, every statement that depends on it is repeated
+      at g ∈ {0.01, 0.02, 0.05, 0.10} in Section 5.6.
+   4. Seed majority. Within a rankable cell, with S the set of seeds valid for both spectral
+      operators and eop,s the MAE of seed s, the heat kernel wins the majority if
+
+                            ēheat < ēwalk and ⃓{s ∈ S : eheat,s < ewalk,s }⃓ ≥ 7,              (7)
+                                                  ⃓                          ⃓
+
+
+       and symmetrically for the walk kernel; otherwise the cell is a tie, and fewer than seven valid
+       seed pairs leaves it undecided. This is the rule of the preliminary protocol, and it is kept so
+                                                            9
+     that the preliminary verdicts can be reproduced. Its operating characteristics are the point:
+     under the null of exchangeable operators, P (X ≥ 7 | n = 10, p = 21 ) = 0.172, so a winner is
+     declared in 34.4% of null cells, and the two-sided sign-test p-values behind a 7:3, 8:2 and 8:1
+     majority are 0.344, 0.109 and 0.039. A majority verdict is therefore reported beside, never
+     instead of, the tests of rule 6, and every table that prints a verdict also prints which operator
+     led in mean, so that a “tie” cannot hide a lead.
+  5. Robustness. A ranking at a (task, shell) is claimed only if it is the same in every t arm run
+     at that budget. Grid 2 runs 4 arms, and the number is stated wherever the rule is applied.
+  6. Inference. The unit of inference is the (task, shell) pair, of which there are six at the larger
+     budget. For each seed s, the per-seed difference ds = eheat,s − ewalk,s is averaged over the t
+     arms in which seed s is valid for both kernels, giving one paired difference per seed; the ten
+     values are summarised by their mean with a 95% bootstrap confidence interval, by the exact
+     two-sided sign test and by the exact two-sided Wilcoxon signed-rank test, and the Wilcoxon
+     p-values are Holm-corrected over the six pairs of the same metric. A difference between the
+     two kernels is claimed at a (task, shell) only where the corrected p is below 0.05. The same
+     statistics are also reported for every arm-level cell, with Holm correction over the 24 cells, as
+     the first draft did; these per-cell tests are descriptive, for the reason given next. The tests were
+     checked against an independent implementation on random data and agree to nine decimal
+     places.
+
+Operating characteristics of rule 6. The exact Wilcoxon test on n non-zero pairs cannot return a
+two-sided p below 2/2n , and Holm over m tests requires the smallest p to fall below 0.05/m. Table 3
+applies this to the arm-level cells of grid 2: with m = 24 the threshold is 0.00208, which n = 9 pairs
+cannot reach (2/29 = 0.00391) and n = 10 pairs reach only on a unanimous 10:0 split (0.00195). Of
+the 24 cells, 18 have nine or fewer valid pairs after exclusions and cannot reject at any effect size,
+and the remaining 6 require every seed to agree. A “0 of 24” under that rule is close to a property
+of the design, which is why the first draft’s headline, which reported exactly that, was withdrawn.
+The table also gives, for each |S|, the minimum detectable effect (MDE) at the uncorrected 0.05
+level and 80% power, computed by simulation from each cell’s own seed dispersion. Pooling over
+arms gives every (task, shell) pair its full ten seeds and reduces m to 6, so the threshold becomes
+0.0083 and a 10:0 or a favourable 9:1 split can reject. The MDE of the pooled test at the corrected
+level is reported beside every pooled result (Table 12); it is what the design can resolve, and where
+the observed difference is smaller than it the correct statement is that the design cannot certify a
+difference, not that none exists. Dependence among the tests is stated rather than assumed away:
+the four arms at a (task, shell) share instances, seeds and eigenbases, which is why they are pooled
+into one test, and the two tasks of a shell share graphs and seeds, so the six pooled tests are not
+independent. Holm’s procedure controls the family-wise error rate under arbitrary dependence, so
+the correction remains valid; it is conservative, not invalid, under this structure.
+    All six rules are implemented once, in the analysis script that produces every table and figure,
+and the same script prints the pathology and plateau counts beside every mean. Figure 2 summarises
+the design, and Table 4 collects the headline numbers with the section that derives each.
+
+
+
+
+                                                  10
+Table 3: Operating characteristics of the per-cell form of rule 6 on grid 2, MAE. For each number of valid seed pairs
+|S|: the smallest two-sided p the exact Wilcoxon test can return, that value times the 24 cells of the Holm family,
+whether any outcome can survive the correction, how many cells have that |S|, and the median over those cells of
+the minimum detectable effect at α = 0.05 (uncorrected) and 80% power, in MAE units, from each cell’s own seed
+dispersion.
+                        |S|    min. p   ×24 rejectable after Holm cells MDE (α=0.05, 80% power)
+                         4 0.12500 1.000                         no 1                                 —
+                         5 0.06250 1.000                         no 1                                 —
+                         6 0.03125 0.750                         no 3                              0.071
+                         7 0.01562 0.375                         no 3                              0.066
+                         8 0.00781 0.188                         no 5                              0.046
+                         9 0.00391 0.094                         no 5                              0.040
+                        10 0.00195 0.047           yes, only on 10:0 6                             0.009
+
+
+       one cell = (task, shell, arm); grid 1: 200 epochs, every arm; grid 2 and seam-cut arm: 1000 epochs, 4 t arms
+
+              5 operators
+                                      4 shells               2 tasks                10 seeds          fixed-reach
+                GCN ·
+                                    264 · 1584 ·           hop · delay              per cell             ladder
+              heat · walk
+                                    3168 · 4400                                                     SGC K ′ · PPR α
+              PPR · SGC
+                                                            capacity
+               t mapping           t initialisation                                budget                 graph
+                                                           612 · 3301
+             relu · softplus         t0 = 0.5 · 2                            200 · 1000 epochs       torus · seam cut
+                                                            params
+
+                                                          reading rules, in order
+
+        1. constant     2. pathology        3. floor         4. vote         5. robust         6. inference
+          baseline,       excluded,        g < 0.05:       ≥ 7/10 seeds       same in          pooled test,
+        every metric       counted        not rankable      34% FPR          every arm         Holm, MDE
 
 
 Figure 2: The study design. Every cell of the grid, one (task, shell, arm), runs the operators on the same instances
@@ -382,83 +537,72 @@ and seeds; the reading rules are applied in order by one script. A majority verd
 paired tests of rule 6, never instead of them.
 
 
-   4. Seed majority. Within a rankable cell, with S the set of seeds valid for both spectral
-      operators and eop,s the MAE of seed s, the heat kernel wins the majority if
-                           ēheat < ēwalk and ⃓{s ∈ S : eheat,s < ewalk,s }⃓ ≥ 7,       (7)
-                                               ⃓                            ⃓
-
-      and symmetrically for the walk kernel; otherwise the cell is a tie, and fewer than seven valid
-      seed pairs leaves it undecided. This is the rule of the preliminary protocol, and it is kept so
-      that the preliminary verdicts can be reproduced. Its operating characteristics are the point:
-      under the null of exchangeable operators, P (X ≥ 7 | n = 10, p = 12 ) = 0.172, so a winner is
-      declared in 34.4% of null cells, and the two-sided sign-test p-values behind a 7:3, 8:2 and 8:1
-      majority are 0.344, 0.109 and 0.039. A majority verdict is therefore reported beside, never
-      instead of, the tests of rule 6, and every table that prints a verdict also prints which operator
-      led in mean, so that a “tie” cannot hide a lead.
-   5. Robustness. A ranking at a (task, shell) is claimed only if it is the same in every t arm run
-      at that budget. Grid 2 runs 4 arms, and the number is stated wherever the rule is applied.
-   6. Inference. For every cell, the paired per-seed differences ds = eheat,s −ewalk,s are summarised
-      by their mean with a 95% bootstrap confidence interval, by the exact two-sided sign test,
-      and by the exact two-sided Wilcoxon signed-rank test, and the Wilcoxon p-values are Holm-
-      corrected over the 24 arm-level cells of the same metric. A difference between the two kernels
-      is claimed only where the corrected p is below 0.05. The tests were checked against an
-      independent implementation on random data and agree to nine decimal places.
-All six rules are implemented once, in the analysis script that produces every table and figure, and
-the same script prints the pathology and plateau counts beside every mean. Figure 2 summarises
-the design, and Table 2 collects the headline numbers with the section that derives each.
-
 5. Results
+
 5.1. A fixed budget produces a floor at scale
-    Figure 3 and Table 3 show, for each capacity and each t arm, the gain (6) of the best operator
+    Figure 3 and Table 5 show, for each capacity and each t arm, the gain (6) of the best operator
 over the constant predictor as the shell grows, at the preliminary budget of 200 epochs. On the
-                                                               8
-Table 2: Headline numbers and where each is derived. Every value is generated from the result files by the same
+264-satellite shell the gain on the hop field is between 7.7% and 28.7% at the released capacity
+and between 24.9% and 40.3% at the submitted capacity; on the delay field it is between 7.9%
+and 19.5% and between 10.9% and 29.2%. On every larger shell it never exceeds 2.9%, in any of
+the eight capacity-by-arm combinations, on either task. Of the 24 hop-field cells at 1584 satellites
+and above, 0 are rankable at the declared 5% floor; Section 5.6 shows that 2 become rankable at a
+2% floor and 5 at 1%, all at 1584 satellites, and Table 6 lists the 84 of 1436 valid large-shell runs
+that end more than 2% below the constant predictor: they concentrate at 1584 satellites, the walk
+kernel contributes 34 of them and the heat kernel 29, and the largest single-run gain among them
+is 18.3%. Of 1920 runs, 5 were excluded as pathologies and 48 were plateaus in the sense of rule 2,
+kept.
+    Doubling the width and adding a layer does not change this: the submitted capacity is as far
+below the floor at 1584 satellites as the released one. Nor does the t arm. The floor is therefore not
+a capacity effect and not a parameterisation effect; Section 5.3 shows that it is a budget effect.
+                                                               11
+Table 4: Headline numbers and where each is derived. Every value is generated from the result files by the same
 script that produces the figures.
 finding                                                      value                      derived in
 runs, fixed 200-epoch budget (grid 1)                        1920                       Sec. 5.1
-largest gain over constant on any shell ≥1584, any           2.9%                       Fig. 3, Tab. 3
+largest gain over constant on any shell ≥1584, any           2.9%                       Fig. 3, Tab. 5
 arm, either capacity (grid 1)
-rankable cells at ≥1584 satellites, hop field, at floor      0 / 2 / 5 of 24            Tab. 15
+rankable cells at ≥1584 satellites, hop field, at floor      0 / 2 / 5 of 24            Tab. 20
 5% / 2% / 1% (grid 1)
 heat-vs-walk verdicts at 264 satellites across the           tie / heat / tie / heat    Fig. 4
 four t arms, submitted capacity (grid 1)
-the same, released capacity (grid 1)                         tie / tie / walk / tie     Tab. 5
+the same, released capacity (grid 1)                         tie / tie / walk / tie     Tab. 7
 runs, 1000-epoch budget, 4 t arms (grid 2)                   720                        Sec. 5.3
-task-scale cells where heat / walk wins in every arm,        2 / 0 of 6                 Tab. 8
+task-scale cells where heat / walk wins in every arm,        2 / 0 of 6                 Tab. 9
 MAE (grid 2)
-the same on the far-node metric (grid 2)                     0 / 0 of 6                 Tab. 12
-arm-level cells where heat / walk leads in mean,             14 / 10 of 24              Tab. 8
+the same on the far-node metric (grid 2)                     0 / 0 of 6                 Tab. 16
+arm-level cells where heat / walk leads in mean,             14 / 10 of 24              Tab. 9
 MAE (grid 2)
-arm-level cells with Wilcoxon p < 0.05 before / after        8 / 0 of 24                Tab. 9
+arm-level cells with Wilcoxon p < 0.05 before / after        8 / 0 of 24                Tab. 11
 Holm, MAE (grid 2)
-runs collapsing to the constant solution under long          87 (12.1%)                 Sec. 5.6
+arm-level cells whose 95% CI excludes zero, favour-          9 / 1 of 24                Tab. 11
+ing heat / walk, MAE (grid 2)
+arm-level cells that can reject after Holm at any            6 of 24                    Tab. 3
+effect size (grid 2)
+pooled (task, shell) tests significant after Holm over       2 of 6; heat at 264        Tab. 12
+6, MAE; direction
+best spectral kernel vs best fixed-reach baseline of         16.4% / -11.8%             Tab. 15
+the ladder, hop field, 1584: best / worst t arm
+runs collapsing to the constant solution under long          87 (12.1%)                 Sec. 5.7
 training (grid 2)
 preliminary 1584-satellite result, walk vs heat, 3           0.148 vs 0.168             Sec. 5.3
 seeds
 
 
-264-satellite shell the gain on the hop field is between 7.7% and 28.7% at the released capacity
-and between 24.9% and 40.3% at the submitted capacity; on the delay field it is between 7.9% and
-19.5% and between 10.9% and 29.2%. On every larger shell it never exceeds 2.9%, in any of the
-eight capacity-by-arm combinations, on either task. Of the 24 hop-field cells at 1584 satellites and
-above, 0 are rankable at the declared 5% floor; Table 15 (Section 5.5) shows that 2 become rankable
-at a 2% floor and 5 at 1%, all at 1584 satellites, and Table 4 lists the 84 of 1436 valid large-shell
-runs that end more than 2% below the constant predictor: they concentrate at 1584 satellites, the
-walk kernel contributes 34 of them and the heat kernel 29, and the largest single-run gain among
-them is 18.3%. Of 1920 runs, 5 were excluded as pathologies and 48 were plateaus in the sense of
-rule 2, kept.
-    Doubling the width and adding a layer does not change this: the submitted capacity is as far
-below the floor at 1584 satellites as the released one. Nor does the t arm. The floor is therefore not
-a capacity effect and not a parameterisation effect; Section 5.3 shows that it is a budget effect.
-
 5.2. The propagation time is a hidden variable
-   On the 264-satellite shell, where learning does occur at 200 epochs, the ranking between the
+    On the 264-satellite shell, where learning does occur at 200 epochs, the ranking between the
 two spectral operators is not stable. Figure 4 plots every seed for the submitted capacity under
-the four t arms; the majority verdicts read, in arm order, tie / heat / tie / heat. Table 5 gives
+the four t arms; the majority verdicts read, in arm order, tie / heat / tie / heat. Table 7 gives
 the means, seed counts, the operator leading in mean, the sign-test p and the verdict for all eight
 capacity-by-arm combinations, including the released capacity, where they read tie / tie / walk
-                                                      9
-                                     released: width 16, 3 layers                       submitted: width 32, 4 layers
+/ tie. Of the 8 verdicts, 5 are ties, 2 are heat majorities and 1 is a walk majority, the latter at
+p = 0.109; no verdict repeats across all four arms at either capacity, and no cell reaches p < 0.05
+on the sign test. The same operators on the same instances rank differently depending only on the
+t arm, and none of the rankings is distinguishable from noise.
+    The figure shows why. For both spectral operators the ten seeds do not scatter around a mean;
+they split. Some runs reach errors well below the constant predictor and the rest stay near it.
+                                                      12
+                                     released: width 16, 3 layers                               submitted: width 32, 4 layers
                           40                                relu, t0=0.5
 
 
@@ -501,8 +645,8 @@ capacity-by-arm combinations, including the released capacity, where they read t
 
 
                            0
-                               264      1584           3168                4400   264       1584           3168         4400
-                                         satellites in shell                                 satellites in shell
+                               264      1584             3168              4400        264          1584           3168             4400
+                                         satellites in shell                                         satellites in shell
 
 
 Figure 3: Gain (6) of the best operator over the constant predictor at 200 epochs, as a function of shell size, for the
@@ -510,80 +654,40 @@ hop field (top) and the delay field (bottom), the released and the submitted cap
 The dotted line is the 5% floor of rule 3. Above 264 satellites every combination lies below it on both tasks.
 
 
-/ tie. Of the 8 verdicts, 5 are ties, 2 are heat majorities and 1 is a walk majority, the latter at
-p = 0.109; no verdict repeats across all four arms at either capacity, and no cell reaches p < 0.05
-on the sign test. The same operators on the same instances rank differently depending only on the
-t arm, and none of the rankings is distinguishable from noise.
-     The figure shows why. For both spectral operators the ten seeds do not scatter around a mean;
-they split. Some runs reach errors well below the constant predictor and the rest stay near it.
-Table 6 counts the escapes, defined as a seed whose error is below 90% of the constant predictor’s.
-Pooled over the eight combinations, 45/79 heat runs (57%) and 46/80 walk runs (58%) escape; a
-two-proportion test gives p = 0.95. If the escape process is a coin flip with the same bias for both
-operators, which is what these rates say, then every verdict in Table 5 is a difference of two or three
-seeds out of ten, and a mean over 3 seeds at this budget, the preliminary version’s sample, is the
-mean of a coin flip. The left panel of Figure 5 shows the learned tℓ per layer at this budget: the
-first layer learns a larger t than the later ones for both operators, and the values do not grow with
-the shell, consistent with the models on large shells not having moved from the constant solution.
 
 
-
-
-                                                                           10
-Table 3: Gain (%) of the best operator over the constant predictor at 200 epochs, ten seeds per cell, both tasks. A
+Table 5: Gain (%) of the best operator over the constant predictor at 200 epochs, ten seeds per cell, both tasks. A
 dagger marks cells below the 5% floor, where the operator ranking is not read.
-                                                        hop field                              delay field
-      capacity       t arm                     264     1584    3168        4400       264      1584      3168      4400
-                     relu, t0 =0.5             23.9    2.9†        0.7†    0.5†      18.3      2.3†      0.5†       0.2†
-                     relu, t0 =2               14.7    0.8†        0.3†    0.2†      13.7      0.6†      0.1†      -0.1†
-      released
-                     softplus, t0 =0.5         28.7    1.8†        0.5†    0.3†      19.5      1.5†      0.4†       0.1†
-                     softplus, t0 =2            7.7    0.7†        0.3†    0.2†       7.9      0.5†      0.0†      -0.2†
-                     relu, t0 =0.5             34.6    2.8†        0.6†    1.0†      29.2      2.3†       0.4†     -0.1†
-                     relu, t0 =2               32.7    1.6†        0.2†    0.2†      21.6      1.2†      -0.0†     -0.1†
-      submitted
-                     softplus, t0 =0.5         40.3    1.0†        0.3†    0.7†      29.0      1.9†       0.0†     -0.1†
-                     softplus, t0 =2           24.9    1.1†        0.3†    0.2†      10.9      1.1†       0.1†     -0.1†
+                                                                     hop field                              delay field
+                      capacity       t arm                 264      1584       3168      4400       264    1584     3168    4400
+                                     relu, t0 =0.5        23.9      2.9†        0.7†     0.5†       18.3    2.3†    0.5†     0.2†
+                                     relu, t0 =2          14.7      0.8†        0.3†     0.2†       13.7    0.6†    0.1†    -0.1†
+                      released
+                                     softplus, t0 =0.5    28.7      1.8†        0.5†     0.3†       19.5    1.5†    0.4†     0.1†
+                                     softplus, t0 =2       7.7      0.7†        0.3†     0.2†        7.9    0.5†    0.0†    -0.2†
+                                     relu, t0 =0.5        34.6      2.8†        0.6†     1.0†       29.2    2.3†     0.4†   -0.1†
+                                     relu, t0 =2          32.7      1.6†        0.2†     0.2†       21.6    1.2†    -0.0†   -0.1†
+                      submitted
+                                     softplus, t0 =0.5    40.3      1.0†        0.3†     0.7†       29.0    1.9†     0.0†   -0.1†
+                                     softplus, t0 =2      24.9      1.1†        0.3†     0.2†       10.9    1.1†     0.1†   -0.1†
 
 
-Table 4: Large-shell runs at 200 epochs whose error is more than 2% below the constant predictor, by capacity,
+                                                                           13
+Table 6: Large-shell runs at 200 epochs whose error is more than 2% below the constant predictor, by capacity,
 operator and shell.
-                                 capacity       operator      1584        3168    4400   all
-                                                GCN                 8        0       0    8
-                                 released       heat               15        1       2   18
-                                                walk               19        3       2   24
-                                                GCN                 0        0       0    0
-                                 submitted      heat               14        2       0   16
-                                                walk               15        1       2   18
+                                                    capacity           operator     1584      3168       4400       all
+                                                                       GCN                8          0          0    8
+                                                    released           heat              15          1          2   18
+                                                                       walk              19          3          2   24
+                                                                       GCN                0          0          0    0
+                                                                       heat              14          2          0   16
+                                                    submitted          walk              15          1          2   18
+                                                                       PPR                2          0          0    2
+                                                                       SGC                0          0          0    0
 
-
-Table 5: Hop field, 264 satellites, 200 epochs: MAE over valid seeds (mean ± sd for the two spectral operators,
-mean for the GCN, valid-seed count in parentheses; the GCN’s sd is 0.012 or less in every cell) under each capacity
-and t arm, the number of seeds on which each spectral operator is lower, the two-sided sign-test p, and the majority
-verdict. The constant predictor scores 0.189.
-capacity     t arm                GCN           heat                      walk                  heat:walk        psign     verdict
-             relu, t0 =0.5        0.175 (10)    0.144 ± 0.040 (10)        0.145 ± 0.044 (10)       6:4           0.754     tie
-             relu, t0 =2          0.175 (10)    0.161 ± 0.034 (10)        0.163 ± 0.034 (10)       6:4           0.754     tie
-released
-             softplus, t0 =0.5    0.175 (10)    0.161 ± 0.032 (10)        0.135 ± 0.050 (10)       2:8           0.109     walk
-             softplus, t0 =2      0.175 (10)    0.176 ± 0.020 (10)        0.174 ± 0.022 (10)       4:6           0.754     tie
-             relu, t0 =0.5        0.166 (10)    0.124 ± 0.035 (10)        0.139 ± 0.042 (10)       6:4           0.754     tie
-             relu, t0 =2          0.166 (10)    0.127 ± 0.045 (9)         0.152 ± 0.033 (10)       8:1           0.039     heat
-submitted
-             softplus, t0 =0.5    0.166 (10)    0.137 ± 0.031 (10)        0.113 ± 0.045 (10)       4:6           0.754     tie
-             softplus, t0 =2      0.166 (10)    0.142 ± 0.042 (10)        0.158 ± 0.033 (10)       7:3           0.344     heat
-
-
-
-5.3. With enough budget, the two kernels are not distinguishable
-   Grid 2 raises the budget to 1000 epochs at the submitted capacity on the three smaller shells,
-with 4 t arms. Every cell leaves the floor: on the hop field the best operator improves on the
-constant predictor by 13% to 70% depending on shell and arm, and on the delay field by 13% to
-36% (Table 8). The floor of Section 5.1 was a budget floor. Table 7 and the right panel of Figure 5
-
-                                                              11
-                                        relu                       relu                       softplus                    softplus
-                                      t0=0.5                       t0=2                        t0=0.5                       t0=2
-                                    verdict: tie               verdict: heat                 verdict: tie               verdict: heat
+                                        relu                           relu                           softplus                          softplus
+                                      t0=0.5                           t0=2                            t0=0.5                             t0=2
+                                    verdict: tie                   verdict: heat                     verdict: tie                     verdict: heat
 
 
                        0.18
@@ -603,7 +707,7 @@ constant predictor by 13% to 70% depending on shell and arm, and on the delay fi
                        0.08
 
 
-                              GCN      heat        walk     GCN    heat     walk       GCN      heat        walk      GCN   heat    walk
+                              GCN      heat        walk       GCN       heat      walk        GCN        heat       walk           GCN      heat      walk
 
 
 Figure 4: Per-seed MAE on the hop field, 264 satellites, submitted capacity, 200 epochs, for the four t arms. Bars
@@ -611,61 +715,74 @@ are means over valid seeds; the dotted line is the constant predictor. The two s
 seeds: a run either leaves the constant solution or stays near it.
 
 
-Table 6: Seeds that escaped the constant solution (MAE below 90% of the constant predictor) out of valid seeds,
+Table 7: Hop field, 264 satellites, 200 epochs: MAE over valid seeds (mean ± sd for the two spectral operators,
+mean for the GCN, valid-seed count in parentheses; the GCN’s sd is 0.012 or less in every cell) under each capacity
+and t arm, the number of seeds on which each spectral operator is lower, the two-sided sign-test p, and the majority
+verdict. The constant predictor scores 0.189.
+                  capacity      t arm                     GCN          heat                   walk                        heat:walk      psign verdict
+                                relu, t0 =0.5             0.175 (10)   0.144 ± 0.040 (10)     0.145 ± 0.044 (10)             6:4      0.754    tie
+                                relu, t0 =2               0.175 (10)   0.161 ± 0.034 (10)     0.163 ± 0.034 (10)             6:4      0.754    tie
+                  released
+                                softplus, t0 =0.5         0.175 (10)   0.161 ± 0.032 (10)     0.135 ± 0.050 (10)             2:8      0.109    walk
+                                softplus, t0 =2           0.175 (10)   0.176 ± 0.020 (10)     0.174 ± 0.022 (10)             4:6      0.754    tie
+                            relu, t0 =0.5                 0.166 (10)   0.124 ± 0.035 (10)     0.139 ± 0.042 (10)             6:4      0.754    tie
+                            relu, t0 =2                   0.166 (10)   0.127 ± 0.045 (9)      0.152 ± 0.033 (10)             8:1      0.039    heat
+                  submitted
+                            softplus, t0 =0.5             0.166 (10)   0.137 ± 0.031 (10)     0.113 ± 0.045 (10)             4:6      0.754    tie
+                            softplus, t0 =2               0.166 (10)   0.142 ± 0.042 (10)     0.158 ± 0.033 (10)             7:3      0.344    heat
+
+                                                                                   14
+Table 8 counts the escapes, defined as a seed whose error is below 90% of the constant predictor’s.
+Pooled over the eight combinations, 45/79 heat runs (57%) and 46/80 walk runs (58%) escape; a
+two-proportion test gives p = 0.95. If the escape process is a coin flip with the same bias for both
+operators, which is what these rates say, then every verdict in Table 7 is a difference of two or three
+seeds out of ten, and a mean over 3 seeds at this budget, the preliminary version’s sample, is the
+mean of a coin flip. The left panel of Figure 5 shows the learned tℓ per layer at this budget: the
+first layer learns a larger t than the later ones for both operators, and the values do not grow with
+the shell, consistent with the models on large shells not having moved from the constant solution.
+
+Table 8: Seeds that escaped the constant solution (MAE below 90% of the constant predictor) out of valid seeds,
 hop field, 264 satellites, 200 epochs.
-                                capacity            t arm                 heat: escaped/valid       walk: escaped/valid
-                                                    relu, t0 =0.5                   5/10                       6/10
-                                                    relu, t0 =2                     4/10                       4/10
-                                released
-                                                    softplus, t0 =0.5               4/10                       6/10
-                                                    softplus, t0 =2                 2/10                       2/10
-                                                    relu, t0 =0.5                   8/10                       8/10
-                                                    relu, t0 =2                     7/9                        6/10
-                                submitted
-                                                    softplus, t0 =0.5               8/10                       9/10
-                                                    softplus, t0 =2                 7/10                       5/10
+                                   capacity      t arm                  heat: escaped/valid        walk: escaped/valid
+                                                 relu, t0 =0.5                        5/10                6/10
+                                                 relu, t0 =2                          4/10                4/10
+                                   released
+                                                 softplus, t0 =0.5                    4/10                6/10
+                                                 softplus, t0 =2                      2/10                2/10
+                                                 relu, t0 =0.5                        8/10                8/10
+                                                 relu, t0 =2                          7/9                 6/10
+                                   submitted
+                                                 softplus, t0 =0.5                    8/10                9/10
+                                                 softplus, t0 =2                      7/10                5/10
 
 
-show what the budget buys: the heat kernel’s first-layer t grows with the shell, from 3.1 at 264
-satellites to 8.2 at 1584 and 10.6 at 3168, while the walk kernel’s stays between 1.3 and 2.3. The
-diffusive operator reaches farther on larger graphs by learning to.
-    Figure 6 and Tables 8 and 9 give the comparison. Read by the majority rule (7) of the prelimi-
-nary protocol, the heat kernel wins in every arm at 2 of 6 task-scale cells and the walk kernel at 0.
-Read by mean, the heat kernel leads in 14 and the walk kernel in 10 of the 24 arm-level cells, 7 of
-the walk leads being recorded as ties by the majority rule. Read by inference, which is the reading
-this paper stands on, 8 of 24 cells reach p < 0.05 on the Wilcoxon test before correction and 0 after
-Holm correction; the sign-test p behind the heat majorities that survive rule 5 ranges from 0.008 to
-0.344. No difference between the two kernels is claimed at any scale. The ratio of the walk kernel’s
-seed standard deviation to the heat kernel’s has median 1.40 over the 24 cells, exceeds 3 in 2 and
-is below 1 in 6; at ten seeds the relative standard error of a standard deviation is about 24%, so no
-                                                                               12
-                                            200 epochs                                                                1000 epochs
+
+                                               200 epochs                                               1000 epochs
                        1.4
-                                                                         −tL
-                                                                heat e
-                                                                                                10
+                                                                heat e −tL
+                                                                                        10
                        1.2                                      walk |e −itL|2
 
 
 
 
  learned t per layer
-                       1.0                                                                       8
+                       1.0                                                               8
 
 
                        0.8
-                                                                                                 6
+                                                                                         6
 
                        0.6
-                                                                                                 4
+                                                                                         4
                        0.4
 
-                                                                                                 2
+                                                                                         2
                        0.2
 
 
-                             264         1584           3168               4400                      264                   1584             3168
-                                         satellites in shell                                                       satellites in shell
+                             264          1584           3168             4400               264           1584            3168
+                                          satellites in shell                                        satellites in shell
 
 
 Figure 5: Learned propagation time per layer (lighter to darker: first to fourth layer) against shell size, hop field,
@@ -673,32 +790,47 @@ submitted capacity, softplus arm with t0 = 0.5, mean over valid seeds. Left: 200
 (grid 2). Note the different vertical scales.
 
 
-                                                hops field                                                            delay field
-                       0.30
 
-                       0.25
+
+                                                                                 15
+5.3. With enough budget, the heat kernel leads on the smallest shell and neither kernel is resolved
+     on the larger ones
+    Grid 2 raises the budget to 1000 epochs at the submitted capacity on the three smaller shells,
+with 4 t arms. Every cell leaves the floor on both metrics: on MAE the best operator improves
+on the constant predictor by 13% to 70% on the hop field and by 13% to 36% on the delay field,
+depending on shell and arm (Table 9), and on the far-node metric, against the constant predictor’s
+own far-node error (0.258 at 1584 satellites on the hop field, against 0.202 on MAE), by 10.3% to
+56.8% on the two large shells (Table 16); 0 of the 24 far-node cells are at the floor. The floor of
+Section 5.1 was a budget floor. Table 10 and the right panel of Figure 5 show what the budget
+buys: the heat kernel’s first-layer t grows with the shell, from 3.1 at 264 satellites to 8.2 at 1584
+and 10.6 at 3168, while the walk kernel’s stays between 1.3 and 2.3. The diffusive operator reaches
+farther on larger graphs by learning to.
+
+                                   hops field                                                     delay field
+                  0.30
+
+                  0.25
 
 
 
 
  MAE, mean ± sd
-                       0.20
+                  0.20
 
-                       0.15
+                  0.15
 
-                       0.10
+                  0.10
 
-                       0.05
+                  0.05
 
-                                   264            1584                    3168                         264                1584           3168
-                                           satellites in shell                                                  satellites in shell
+                         264          1584                   3168                  264                1584          3168
+                               satellites in shell                                          satellites in shell
 
 
 
-                                                 constant predictor              heat e −tL, relu            walk |e −itL|2, softplus
-                                                 GCN (local), relu               heat e   −tL
-                                                                                                , softplus   PPR
-                                                 GCN (local), softplus           walk |e −itL|2, relu        SGC
+                                     constant predictor         heat e −tL, relu         walk |e −itL|2, softplus
+                                     GCN (local), relu          heat e −tL, softplus     PPR
+                                     GCN (local), softplus      walk |e −itL|2, relu     SGC
 
 
 
@@ -707,153 +839,205 @@ Figure 6: MAE against shell size at 1000 epochs, submitted capacity, the two t0 
 the reach-matched PPR and SGC baselines where run. Points are means over valid seeds and bars one standard
 deviation; the dotted line is the constant predictor. Points are offset horizontally within each shell for legibility.
 
+    Figure 6 and Tables 9 to 12 give the comparison. Read by the pooled test of rule 6 (Table 12),
+which is the reading this paper stands on, the heat kernel is better on the 264-satellite shell on both
+tasks: all ten seeds favour it on the hop field (d¯ = −0.0253, Holm-corrected p = 0.012) and on the
+delay field (d¯ = −0.0056, p = 0.012). On the two larger shells no direction is certified: the seed
+votes are 5:5 and 4:6 on the hop field and 9:1 and 2:8 on the delay field, the last two in opposite
+directions, with corrected p of 0.863, 0.863, 0.055 and 0.826. The minimum detectable effect of
+these four tests is between 0.014 and 0.087 in MAE units, against constant-predictor errors near
+0.2; at 1584 satellites on the hop field, where the preliminary claim was made, the design resolves a
+difference of 0.087 and the observed difference is +0.0064. The per-cell statistics (Table 11) describe
+the same picture: 10 of the 24 bootstrap intervals exclude zero, 9 of them favouring the heat kernel
+and 1 the walk kernel, against 1.2 expected under a null at 95% coverage, and 7 of the 10 are on
 
-statement about relative variance is made either. The preliminary version’s finding, a walk-kernel
-error of 0.148 against 0.168 at 1584 satellites, is not reproduced: under the same parameterisation
-and capacity, with ten seeds instead of 3, the two kernels are indistinguishable at that scale on both
-tasks.
-                                                                                  13
-Table 7: Learned propagation time per layer at 1000 epochs, hop field, submitted capacity, softplus arm with t0 = 0.5,
-mean over valid seeds.
-                                           heat e−tL                 walk |e−itL |2
-                           N          t1     t2    t3     t4       t1     t2    t3     t4
-                           264      3.1     1.7   1.0   0.7       1.3    1.1   1.3    1.2
-                           1584     8.2     5.3   4.8   6.3       1.9    2.3   2.6    4.6
-                           3168    10.6     5.9   3.8   5.3       2.3    4.3   1.6    3.3
-
-
-Table 8: Grid 2, MAE at 1000 epochs, submitted capacity: mean ± sd over valid seeds with the count in parentheses,
-the operator leading in mean, the number of seeds on which each spectral operator is lower, and the majority verdict
-of rule 4. “n<7” marks a cell with too few valid seed pairs for that rule.
-task, t arm      N    GCN                  heat                  walk                  leader   heat:walk   verdict
-hops field, relu, t0 =0.5
-                 264 0.137 ± 0.002 (8)     0.065 ± 0.035 (9)     0.123 ± 0.038 (10)    heat        8:1      heat
-                1584 0.193 ± 0.004 (9)     0.119 ± 0.037 (6)     0.168 ± 0.039 (10)    heat        4:2      n<7
-                3168 0.173 ± 0.002 (9)     0.152 ± 0.029 (9)     0.153 ± 0.033 (9)     walk        5:3      tie
-hops field, relu, t0 =2
-                 264 0.137 ± 0.002 (8)     0.057 ± 0.002 (9)     0.093 ± 0.037 (9)     heat        8:0      heat
-                1584 0.193 ± 0.004 (9)     0.132 ± 0.037 (8)     0.107 ± 0.062 (8)     walk        3:4      tie
-                3168 0.173 ± 0.002 (9)     0.161 ± 0.028 (7)     0.154 ± 0.052 (5)     heat        3:1      n<7
-hops field, softplus, t0 =0.5
-                 264 0.137 ± 0.002 (8)     0.058 ± 0.005 (10)    0.064 ± 0.004 (10)    heat        7:3      heat
-                1584 0.193 ± 0.004 (9)     0.101 ± 0.037 (10)    0.099 ± 0.057 (8)     walk        2:6      tie
-                3168 0.173 ± 0.002 (9)     0.135 ± 0.032 (7)     0.120 ± 0.047 (8)     walk        2:3      n<7
-hops field, softplus, t0 =2
-                 264 0.137 ± 0.002 (8)     0.056 ± 0.004 (9)     0.066 ± 0.005 (9)     heat        7:1      heat
-                1584 0.193 ± 0.004 (9)     0.102 ± 0.047 (7)     0.089 ± 0.041 (8)     walk        2:4      n<7
-                3168 0.173 ± 0.002 (9)     0.135 ± 0.034 (8)     0.120 ± 0.051 (9)     walk        5:2      tie
-delay field, relu, t0 =0.5
-                 264 0.133 ± 0.008 (8)     0.111 ± 0.004 (10)    0.122 ± 0.009 (7)     heat        7:0      heat
-                1584 0.163 ± 0.003 (9)     0.135 ± 0.006 (10)    0.151 ± 0.016 (10)    heat        8:2      heat
-                3168 0.165 ± 0.003 (8)     0.138 ± 0.012 (10)    0.136 ± 0.032 (10)    walk        6:4      tie
-delay field, relu, t0 =2
-                 264 0.133 ± 0.008 (8)     0.111 ± 0.004 (10)    0.121 ± 0.012 (8)     heat        7:1      heat
-                1584 0.163 ± 0.003 (9)     0.134 ± 0.004 (10)    0.137 ± 0.011 (10)    heat        8:2      heat
-                3168 0.165 ± 0.003 (8)     0.159 ± 0.049 (9)     0.148 ± 0.029 (10)    walk        4:5      tie
-delay field, softplus, t0 =0.5
-                 264 0.133 ± 0.008 (8)     0.111 ± 0.003 (9)     0.112 ± 0.004 (10)    heat        7:2      heat
-                1584 0.163 ± 0.003 (9)     0.132 ± 0.004 (10)    0.139 ± 0.013 (10)    heat        8:2      heat
-                3168 0.165 ± 0.003 (8)     0.140 ± 0.033 (9)     0.129 ± 0.024 (7)     walk        1:5      n<7
-delay field, softplus, t0 =2
-                 264 0.133 ± 0.008 (8)     0.111 ± 0.005 (10)    0.113 ± 0.005 (10)    heat        9:1      heat
-                1584 0.163 ± 0.003 (9)     0.135 ± 0.005 (10)    0.134 ± 0.005 (9)     heat        4:5      tie
-                3168 0.165 ± 0.003 (8)     0.134 ± 0.025 (10)    0.116 ± 0.024 (9)     walk        3:6      tie
-
+                                                                    16
+Table 9: Grid 2, MAE at 1000 epochs, submitted capacity: the constant predictor’s MAE, then mean ± sd over valid
+seeds with the count in parentheses for each operator, the operator leading in mean, the number of seeds on which
+each spectral operator is lower, and the majority verdict of rule 4. “n<7” marks a cell with too few valid seed pairs
+for that rule.
+ task, t arm     N const GCN                  heat                  walk                leader heat:walk verdict
+ hops field, relu, t0 =0.5
+                 264 0.189 0.137 ± 0.002 (8)      0.065 ± 0.035 (9)    0.123 ± 0.038 (10) heat      8:1    heat
+               1584 0.202 0.193 ± 0.004 (9)       0.119 ± 0.037 (6)    0.168 ± 0.039 (10) heat      4:2    n<7
+               3168 0.178 0.173 ± 0.002 (9)       0.152 ± 0.029 (9)    0.153 ± 0.033 (9) walk       5:3    tie
+ hops field, relu, t0 =2
+                 264 0.189 0.137 ± 0.002 (8)      0.057 ± 0.002 (9)    0.093 ± 0.037 (9)     heat   8:0    heat
+               1584 0.202 0.193 ± 0.004 (9)       0.132 ± 0.037 (8)    0.107 ± 0.062 (8)     walk   3:4    tie
+               3168 0.178 0.173 ± 0.002 (9)       0.161 ± 0.028 (7)    0.154 ± 0.052 (5)     heat   3:1    n<7
+ hops field, softplus, t0 =0.5
+                 264 0.189 0.137 ± 0.002 (8)      0.058 ± 0.005 (10) 0.064 ± 0.004 (10) heat        7:3    heat
+               1584 0.202 0.193 ± 0.004 (9)       0.101 ± 0.037 (10) 0.099 ± 0.057 (8) walk         2:6    tie
+               3168 0.178 0.173 ± 0.002 (9)       0.135 ± 0.032 (7) 0.120 ± 0.047 (8) walk          2:3    n<7
+ hops field, softplus, t0 =2
+                 264 0.189 0.137 ± 0.002 (8)      0.056 ± 0.004 (9)    0.066 ± 0.005 (9)     heat   7:1    heat
+               1584 0.202 0.193 ± 0.004 (9)       0.102 ± 0.047 (7)    0.089 ± 0.041 (8)     walk   2:4    n<7
+               3168 0.178 0.173 ± 0.002 (9)       0.135 ± 0.034 (8)    0.120 ± 0.051 (9)     walk   5:2    tie
+ delay field, relu, t0 =0.5
+                 264 0.174 0.133 ± 0.008 (8)      0.111 ± 0.004 (10) 0.122 ± 0.009 (7) heat         7:0    heat
+               1584 0.172 0.163 ± 0.003 (9)       0.135 ± 0.006 (10) 0.151 ± 0.016 (10) heat        8:2    heat
+               3168 0.170 0.165 ± 0.003 (8)       0.138 ± 0.012 (10) 0.136 ± 0.032 (10) walk        6:4    tie
+ delay field, relu, t0 =2
+                 264 0.174 0.133 ± 0.008 (8)      0.111 ± 0.004 (10) 0.121 ± 0.012 (8) heat         7:1    heat
+               1584 0.172 0.163 ± 0.003 (9)       0.134 ± 0.004 (10) 0.137 ± 0.011 (10) heat        8:2    heat
+               3168 0.170 0.165 ± 0.003 (8)       0.159 ± 0.049 (9) 0.148 ± 0.029 (10) walk         4:5    tie
+ delay field, softplus, t0 =0.5
+                 264 0.174 0.133 ± 0.008 (8)      0.111 ± 0.003 (9) 0.112 ± 0.004 (10) heat         7:2    heat
+               1584 0.172 0.163 ± 0.003 (9)       0.132 ± 0.004 (10) 0.139 ± 0.013 (10) heat        8:2    heat
+               3168 0.170 0.165 ± 0.003 (8)       0.140 ± 0.033 (9) 0.129 ± 0.024 (7) walk          1:5    n<7
+ delay field, softplus, t0 =2
+                 264 0.174 0.133 ± 0.008 (8)      0.111 ± 0.005 (10) 0.113 ± 0.005 (10) heat        9:1    heat
+               1584 0.172 0.163 ± 0.003 (9)       0.135 ± 0.005 (10) 0.134 ± 0.005 (9) heat         4:5    tie
+               3168 0.170 0.165 ± 0.003 (8)       0.134 ± 0.025 (10) 0.116 ± 0.024 (9) walk         3:6    tie
 
 
+
+
+Table 10: Learned propagation time per layer at 1000 epochs, hop field, submitted capacity, softplus arm with
+t0 = 0.5, mean over valid seeds.
+                                           heat e−tL                    walk |e−itL |2
+                           N          t1     t2       t3    t4         t1    t2    t3       t4
+                           264      3.1     1.7     1.0    0.7        1.3   1.1   1.3      1.2
+                           1584     8.2     5.3     4.8    6.3        1.9   2.3   2.6      4.6
+                           3168    10.6     5.9     3.8    5.3        2.3   4.3   1.6      3.3
+
+
+                                                           17
+Table 11: Grid 2, MAE: paired inference across seeds for each arm-level cell, 1000 epochs, submitted capacity (the
+descriptive, per-cell form of rule 6). d¯ is the mean over valid seed pairs of the per-seed difference eheat −ewalk , negative
+favouring the heat kernel, with its 95% bootstrap interval; the three p-values are the exact two-sided sign test, the
+exact two-sided Wilcoxon signed-rank test, and the Wilcoxon p Holm-corrected over the 24 cells of this table. Table 3
+shows that 18 of these cells cannot reach a corrected p below 0.05 at any effect size; the constant predictor for each
+cell is in Table 9.
+                                                     d¯ = ēheat − ēwalk            two-sided p
+                   t arm                  N     mean          95% CI            sign Wilcoxon Holm
+                   hops field
+                   relu, t0 =0.5      264     −0.0548    [−0.0793, −0.0294]   0.039       0.008   0.180
+                                     1584     −0.0341    [−0.0808, +0.0163]   0.688       0.312   1.000
+                                     3168     +0.0035    [−0.0228, +0.0310]   0.727       0.844   1.000
+                   relu, t0 =2        264     −0.0384    [−0.0644, −0.0144]   0.008       0.008   0.180
+                                     1584     +0.0286    [−0.0381, +0.0890]   1.000       0.578   1.000
+                                     3168     −0.0053    [−0.0444, +0.0434]   0.625       0.875   1.000
+                   softplus, t0 =0.5 264      −0.0059    [−0.0103, −0.0009]   0.344       0.049   0.830
+                                     1584     +0.0076    [−0.0392, +0.0486]   0.289       0.641   1.000
+                                     3168     +0.0133    [−0.0349, +0.0541]   1.000       0.812   1.000
+                   softplus, t0 =2    264     −0.0089    [−0.0136, −0.0043]   0.070       0.016   0.328
+                                     1584     +0.0060    [−0.0277, +0.0350]   0.688       0.688   1.000
+                                     3168     +0.0070    [−0.0247, +0.0474]   0.453       0.938   1.000
+                   delay field
+                   relu, t0 =0.5      264     −0.0130    [−0.0184, −0.0074]   0.016       0.016   0.328
+                                     1584     −0.0159    [−0.0248, −0.0075]   0.109       0.020   0.371
+                                     3168     +0.0013    [−0.0162, +0.0205]   0.754       0.922   1.000
+                   relu, t0 =2        264     −0.0112    [−0.0195, −0.0033]   0.070       0.055   0.875
+                                     1584     −0.0037    [−0.0092, +0.0006]   0.109       0.105   1.000
+                                     3168     +0.0144    [−0.0153, +0.0497]   1.000       0.652   1.000
+                   softplus, t0 =0.5 264      −0.0010    [−0.0020, +0.0001]   0.180       0.129   1.000
+                                     1584     −0.0072    [−0.0149, −0.0014]   0.109       0.037   0.668
+                                     3168     +0.0255    [+0.0032, +0.0528]   0.219       0.156   1.000
+                   softplus, t0 =2    264     −0.0016    [−0.0022, −0.0009]   0.021       0.004   0.094
+                                     1584     −0.0004    [−0.0037, +0.0034]   1.000       1.000   1.000
+                                     3168     +0.0138    [−0.0095, +0.0356]   0.508       0.203   1.000
+
+
+
+
+Table 12: Grid 2, MAE: the pooled form of rule 6, one test per (task, shell). For each seed the difference eheat − ewalk
+is averaged over the t arms in which that seed is valid for both kernels; the columns give the mean of the ten per-seed
+values with its 95% bootstrap interval, the exact sign-test and Wilcoxon p, the Wilcoxon p Holm-corrected over the
+six rows, the seed vote, and the minimum detectable effect of this test at the corrected level (0.05/6) and 80% power
+from the row’s own seed dispersion, in MAE units. An asterisk marks a corrected p below 0.05.
+                                      d¯ over arms                    two-sided p
+         task       N seeds        mean                 95% CI     sign Wilcoxon Holm (6) heat:walk MDE
+         hops     264      10   −0.0253   [−0.0356, −0.0153]      0.002     0.002      0.012∗         10:0   0.026
+         hops    1584      10   +0.0064   [−0.0281, +0.0384]      1.000     0.846       0.863          5:5   0.087
+         hops    3168      10   +0.0057   [−0.0121, +0.0225]      0.754     0.432       0.863          4:6   0.044
+         delay    264      10   −0.0056   [−0.0081, −0.0033]      0.002     0.002      0.012∗         10:0   0.006
+         delay   1584      10   −0.0075   [−0.0134, −0.0029]      0.021     0.014       0.055          9:1   0.014
+         delay   3168      10   +0.0086   [−0.0063, +0.0216]      0.109     0.275       0.826          2:8   0.038
+
+
+                                                             18
+the 264-satellite shell; all 8 cells with uncorrected Wilcoxon p < 0.05 favour the heat kernel; and 0
+cells survive the per-cell Holm correction, which Table 3 shows 18 of them could not have done at
+any effect size. Read by the majority rule (7) of the preliminary protocol, the heat kernel wins in
+every arm at 2 of 6 task-scale cells, both of them the 264-satellite shell, and the walk kernel at 0;
+by mean the heat kernel leads in 14 and the walk kernel in 10 of the 24 arm-level cells. The ratio
+of the walk kernel’s seed standard deviation to the heat kernel’s has median 1.40 over the 24 cells,
+exceeds 3 in 2 and is below 1 in 6; at ten seeds the relative standard error of a standard deviation
+is about 24%, so no statement about relative variance is made. The preliminary version’s finding,
+a walk-kernel error of 0.148 against 0.168 at 1584 satellites, is not reproduced on the torus: under
+the same parameterisation and capacity, with ten seeds instead of 3, the seed vote at that scale is
+5:5 and the only certified direction in the grid, on the smallest shell, is the opposite one. Whether
+it reproduces on the seam-cut graph is the question of Section 5.5.
     The local GCN operator is the worst everywhere, as expected for a four-hop model on graphs
 whose eccentricity is tens of hops; on the hop field it clears the 5% floor only on the 264-satellite
-shell (gain 27.6%, against 4.5% at 1584 and 2.6% at 3168). Table 10 places training error beside
-test error for each operator, as a reference for what each model achieves on the instances it was
+shell (gain 27.6%, against 4.5% at 1584 and 2.6% at 3168). Table 13 places training error beside
+test error for each operator. On the hop field the two are equal to five decimals in every cell
+(largest difference 0.00000), and on the delay field they differ by at most 0.0012: this is the vertex-
+transitivity of Section 3.3 made visible. No model overfits, every model underfits, and on the torus
+the evaluation instances carry no generalisation information that the training instances do not;
+the errors of this grid measure how well each operator fits one field, and the comparison between
+operators is unaffected because all are fitted to the same one. On the seam-cut graph, where the
+instances differ, training and test error separate by up to 0.009 (Section 5.5).
 
-                                                         14
-Table 9: Grid 2, MAE: paired inference across seeds for each arm-level cell. Mean of the per-seed difference eheat −ewalk
-(negative favours the heat kernel) with 95% bootstrap interval, exact two-sided sign-test p, exact two-sided Wilcoxon
-signed-rank p, and the Wilcoxon p Holm-corrected over the 24 cells.
-               task, t arm       N    ēheat − ēwalk               95% CI      psign   pWilcoxon   pHolm
-               hops field, relu, t0 =0.5
-               hops field, relu, t0 =2
-               hops field, softplus, t0 =0.5
-               hops field, softplus, t0 =2
-               delay field, relu, t0 =0.5
-               delay field, relu, t0 =2
-               delay field, softplus, t0 =0.5
-               delay field, softplus, t0 =2
-                                264          -0.0548       [-0.0793, -0.0294]   0.039      0.008    0.180
-                               1584          -0.0341     [-0.0808, +0.0163]     0.688      0.312    1.000
-                               3168         +0.0035      [-0.0228, +0.0310]     0.727      0.844    1.000
-                                264          -0.0384       [-0.0644, -0.0144]   0.008      0.008    0.180
-                               1584         +0.0286      [-0.0381, +0.0890]     1.000      0.578    1.000
-                               3168          -0.0053     [-0.0444, +0.0434]     0.625      0.875    1.000
-                                264          -0.0059       [-0.0103, -0.0009]   0.344      0.049    0.830
-                               1584         +0.0076      [-0.0392, +0.0486]     0.289      0.641    1.000
-                               3168         +0.0133      [-0.0349, +0.0541]     1.000      0.812    1.000
-                                264          -0.0089       [-0.0136, -0.0043]   0.070      0.016    0.328
-                               1584         +0.0060      [-0.0277, +0.0350]     0.688      0.688    1.000
-                               3168         +0.0070      [-0.0247, +0.0474]     0.453      0.938    1.000
-                                264          -0.0130       [-0.0184, -0.0074]   0.016      0.016    0.328
-                               1584          -0.0159       [-0.0248, -0.0075]   0.109      0.020    0.371
-                               3168         +0.0013      [-0.0162, +0.0205]     0.754      0.922    1.000
-                                264          -0.0112       [-0.0195, -0.0033]   0.070      0.055    0.875
-                               1584          -0.0037     [-0.0092, +0.0006]     0.109      0.105    1.000
-                               3168         +0.0144      [-0.0153, +0.0497]     1.000      0.652    1.000
-                                264          -0.0010     [-0.0020, +0.0001]     0.180      0.129    1.000
-                               1584          -0.0072       [-0.0149, -0.0014]   0.109      0.037    0.668
-                               3168         +0.0255     [+0.0032, +0.0528]      0.219      0.156    1.000
-                                264          -0.0016       [-0.0022, -0.0009]   0.021      0.004    0.094
-                               1584          -0.0004     [-0.0037, +0.0034]     1.000      1.000    1.000
-                               3168         +0.0138      [-0.0095, +0.0356]     0.508      0.203    1.000
+Table 13: Training and test MAE at 1000 epochs, submitted capacity, softplus arm with t0 = 0.5, mean over valid
+seeds, on the torus. The training column is the error on the eight instances each model was fitted to. On the hop
+field the evaluation instances are copies of the training instances up to relabelling, and the two columns coincide.
+                                             GCN               heat              walk
+                      task        N     train      test    train      test   train      test
+                      hops       264    0.137    0.137     0.058   0.058     0.064    0.064
+                      hops      1584    0.193    0.193     0.101   0.101     0.099    0.099
+                      hops      3168    0.173    0.173     0.135   0.135     0.120    0.120
+                      delay      264    0.133    0.133     0.112   0.111     0.112    0.112
+                      delay     1584    0.163    0.163     0.132   0.132     0.140    0.139
+                      delay     3168    0.165    0.165     0.140   0.140     0.129    0.129
 
 
+Fixed-reach baselines. Table 14 reports the two first-draft operators of (5), with the constant pre-
+dictor beside them, and Table 15 the full ladder at 1000 epochs. The fixed-reach operators carry
+no learned t, so a spectral kernel that beats the best of them does so by something other than
+reach alone. At 200 epochs they sit on the same floor as everything else on the large shells, gaining
+at most 6.5% over the constant predictor there. At 1000 epochs the first-draft operators, whose
+measured reach is 2.5 to 2.8 hops per layer, gain 64.9% (PPR) and 67.7% (SGC) over the constant
+predictor on the 264-satellite hop field, 7.6% and -0.1% at 1584 satellites and 7.4% and 9.9% at
+3168. The 1584-satellite cell is not explained by reach, since the 3168-satellite shell has the larger
+eccentricity and the same operators do better there; it is the seed bimodality of Section 5.2 again.
+                                                          19
+Of the 7 valid SGC seeds in that cell, 3 sit on the constant solution and 4 escaped it, which is
+what the standard deviation of 0.088, the largest in the grid, records; the PPR cell splits 3 to 2. A
+margin measured against that cell, as the first draft’s 52.5% was, is a margin over a baseline that
+half-failed to train, and it is withdrawn.
+     The ladder replaces it. Its best rung per (task, shell), chosen on the same ten seeds the kernels
+are scored on and therefore favourable to the baselines, is SGC K ′ =8 at 264 satellites on the hop
+field, PPR α=0.01 at 1584 and SGC K ′ =32 at 3168, with errors 0.061, 0.106 and 0.131; on the
+delay field PPR α=0.2, PPR α=0.05 and SGC K ′ =32. Against these, the better spectral kernel
+in its best t arm is ahead in all 6 task-scale cells, by 8.4%, 16.4% and 8.4% on the hop field and
+1.1%, 1.1% and 16.5% on the delay field; in its worst t arm it is behind the best rung in 5 of the
+six cells (-11.8% at 1584 and -17.5% at 3168 satellites on the hop field, a negative margin being a
+loss), and both kernels beat the best rung in every arm in 0 of the six cells. The ladder has its own
+floor: SGC at K ′ = 64, whose per-layer reach of 6.7 hops on the 264-satellite shell is a third of the
+eccentricity, returns the constant predictor’s error on both tasks there, the over-smoothing that a
+fixed reach beyond the field’s scale produces. What a learned propagation time buys is therefore a
+margin of 1.1% to 16.5% over a tuned fixed reach when its parameterisation and initialisation are
+right, and in 5 of six cells a loss to it when they are not; the first draft’s “53%” was the untuned
+baseline’s failure, not the kernel’s success.
 
-fitted to: the spectral kernels fit their training instances to errors well below their test errors on
-the small shell and closer to them on the large shells, and the GCN fits neither.
-
-Reach-matched baselines. Table 11 reports the two decoupled operators of (5) beside the better of
-the two spectral kernels in each cell. They carry no learned t and reach a fixed number of hops,
-so a spectral kernel that beats them does so by something other than reach alone. At 200 epochs
-the fixed-reach operators sit on the same floor as everything else on the large shells, gaining at
-most 6.5% over the constant predictor there. At 1000 epochs the comparison separates: on the
-264-satellite hop field the better fixed-reach operator reaches 0.061 against 0.056 for the better
-spectral kernel, a gap of 8%, but at 1584 satellites it reaches 0.186 against 0.089 (53%) and at 3168
-satellites 0.160 against 0.120 (25%); on the delay field the gaps are 5%, 4% and 25%. In the worst
-t arm, however, the margin shrinks to 29% at 1584 and 3% at 3168 satellites, and both kernels
-beat both baselines in every arm in only 1 of the six task-scale cells. A learned propagation time
-can therefore earn its cost on the larger graphs, where a fixed reach of 1/α or K ′ hops is short of
-                                                             15
-Table 10: Training and test MAE at 1000 epochs, submitted capacity, softplus arm with t0 = 0.5, mean over valid
-seeds. The training column is the error on the eight instances each model was fitted to and serves as the achievable-
-error reference for that model.
-                                             GCN                heat                walk
-                       task        N     train     test    train       test     train      test
-                       hops      264    0.137    0.137     0.058    0.058       0.064    0.064
-                       hops     1584    0.193    0.193     0.101    0.101       0.099    0.099
-                       hops     3168    0.173    0.173     0.135    0.135       0.120    0.120
-                       delay     264    0.133    0.133     0.112    0.111       0.112    0.112
-                       delay    1584    0.163    0.163     0.132    0.132       0.140    0.139
-                       delay    3168    0.165    0.165     0.140    0.140       0.129    0.129
+Table 14: The first-draft fixed-reach baselines of (5): the constant predictor’s MAE and the MAE of personalised-
+PageRank propagation (α = 0.05, K = 20 steps) and of the K ′ = 8 power of the normalised adjacency, mean ±
+sd over valid seeds (at 200 epochs all ten seeds are valid; at 1000 epochs the count is in parentheses), submitted
+capacity, beside the lower of the two spectral kernels’ means at 1000 epochs.
+                                200 epochs                                     1000 epochs
+ task      N const PPR                  SGC             PPR                  SGC                  best of heat/walk
+ hops     264   0.189   0.161 ± 0.040   0.161 ± 0.038   0.066 ± 0.010 (8)    0.061 ± 0.004 (9)               0.056
+ hops    1584   0.202   0.200 ± 0.004   0.201 ± 0.001   0.186 ± 0.025 (7)    0.202 ± 0.088 (7)               0.089
+ hops    3168   0.178   0.177 ± 0.000   0.177 ± 0.001   0.164 ± 0.005 (9)    0.160 ± 0.005 (8)               0.120
+ hops    4400   0.187   0.187 ± 0.000   0.187 ± 0.000   —                    —                                  —
+ delay    264   0.174   0.170 ± 0.009   0.172 ± 0.004   0.117 ± 0.005 (10)   0.118 ± 0.005 (10)              0.111
+ delay   1584   0.172   0.172 ± 0.003   0.171 ± 0.003   0.153 ± 0.039 (8)    0.138 ± 0.005 (10)              0.132
+ delay   3168   0.170   0.170 ± 0.003   0.170 ± 0.003   0.156 ± 0.021 (10)   0.157 ± 0.011 (9)               0.116
+ delay   4400   0.169   0.169 ± 0.002   0.169 ± 0.002   —                    —                                  —
 
 
-Table 11: Reach-matched decoupled baselines: MAE (mean ± sd over valid seeds; at 200 epochs all ten seeds are
-valid, at 1000 epochs the count is in parentheses) of personalised-PageRank propagation and of the K ′ -th power of
-the normalised adjacency, at 200 and 1000 epochs, submitted capacity, beside the lower of the two spectral kernels’
-means at 1000 epochs.
-                          200 epochs                                           1000 epochs
-task       N    PPR              SGC                 PPR                      SGC                  best of heat/walk
-hops     264    0.161 ± 0.040    0.161 ± 0.038       0.066 ± 0.010 (8)        0.061 ± 0.004 (9)               0.056
-hops    1584    0.200 ± 0.004    0.201 ± 0.001       0.186 ± 0.025 (7)        0.202 ± 0.088 (7)               0.089
-hops    3168    0.177 ± 0.000    0.177 ± 0.001       0.164 ± 0.005 (9)        0.160 ± 0.005 (8)               0.120
-hops    4400    0.187 ± 0.000    0.187 ± 0.000       —                        —                                  —
-delay    264    0.170 ± 0.009    0.172 ± 0.004       0.117 ± 0.005 (10)       0.118 ± 0.005 (10)              0.111
-delay   1584    0.172 ± 0.003    0.171 ± 0.003       0.153 ± 0.039 (8)        0.138 ± 0.005 (10)              0.132
-delay   3168    0.170 ± 0.003    0.170 ± 0.003       0.156 ± 0.021 (10)       0.157 ± 0.011 (9)               0.116
-delay   4400    0.169 ± 0.002    0.169 ± 0.002       —                        —                                  —
-
-
-
-the eccentricity, but whether it does depends on how t is parameterised and initialised, which is
-the paper’s second finding seen from the other side. What survives is a statement about the family
-under a good t arm, not about which member of the family is used.
 
 5.4. The majority verdict moves with the metric
      The preliminary version also reported the area under the error curve restricted to far nodes,
@@ -861,192 +1045,277 @@ those beyond half the destination’s eccentricity, as the metric on which a lon
 most clearly. Formally, with h(i, d) the hop distance of node i from the destination and ϵ the
 destination’s eccentricity, the far-node error is the mean absolute error over {i : h(i, d) > ϵ/2}; it
 is in the same normalised units as the MAE and is larger because the far nodes are the hard ones.
-Table 12 reports it for grid 2 under the same rules, with paired inference in Table 13, and Table 14
-sets the seed votes on the two metrics side by side for every cell.
-     On the far-node metric the heat kernel wins in every arm at 0 of 6 task-scale cells, against 2
-on MAE; 4 cells reach p < 0.05 before correction and 0 after. The same runs, scored on the two
-metrics, move the seed vote by a median of 1 and up to 3 seeds, and by two or more in 9 of 24
-cells. That is the noise amplitude of the majority statistic, measured on the data themselves, and
-it is the size of the margins by which the majority verdicts of Tables 5 and 8 were declared. On
-
-                                                          16
-Table 12: Grid 2, far-node error at 1000 epochs, submitted capacity: mean ± sd over valid seeds with the count in
-parentheses, the operator leading in mean, the seed votes, and the majority verdict of rule 4 applied to this metric.
-task, t arm      N    GCN                 heat                  walk                  leader   heat:walk   verdict
-hops field, relu, t0 =0.5
-                 264 0.211 ± 0.003 (8)    0.109 ± 0.066 (9)     0.186 ± 0.057 (10)    heat        7:2      heat
-                1584 0.257 ± 0.016 (9)    0.198 ± 0.063 (6)     0.227 ± 0.049 (10)    heat        3:3      floor
-                3168 0.243 ± 0.005 (9)    0.236 ± 0.051 (9)     0.220 ± 0.043 (9)     walk        2:6      floor
-hops field, relu, t0 =2
-                 264 0.211 ± 0.003 (8)    0.083 ± 0.012 (9)     0.139 ± 0.054 (9)     heat        8:0      heat
-                1584 0.257 ± 0.016 (9)    0.203 ± 0.033 (8)     0.142 ± 0.079 (8)     walk        2:5      tie
-                3168 0.243 ± 0.005 (9)    0.230 ± 0.028 (7)     0.209 ± 0.057 (5)     walk        1:3      floor
-hops field, softplus, t0 =0.5
-                 264 0.211 ± 0.003 (8)    0.090 ± 0.010 (10)    0.100 ± 0.008 (10)    heat        6:4      tie
-                1584 0.257 ± 0.016 (9)    0.149 ± 0.035 (10)    0.134 ± 0.063 (8)     walk        2:6      tie
-                3168 0.243 ± 0.005 (9)    0.200 ± 0.040 (7)     0.180 ± 0.069 (8)     walk        2:3      floor
-hops field, softplus, t0 =2
-                 264 0.211 ± 0.003 (8)    0.093 ± 0.008 (9)     0.105 ± 0.012 (9)     heat        5:3      tie
-                1584 0.257 ± 0.016 (9)    0.158 ± 0.041 (7)     0.112 ± 0.055 (8)     walk        2:4      n<7
-                3168 0.243 ± 0.005 (9)    0.216 ± 0.048 (8)     0.187 ± 0.056 (9)     walk        2:5      floor
-delay field, relu, t0 =0.5
-                 264 0.189 ± 0.010 (8)    0.152 ± 0.009 (10)    0.178 ± 0.017 (7)     heat        7:0      heat
-                1584 0.209 ± 0.002 (9)    0.183 ± 0.014 (10)    0.197 ± 0.020 (10)    heat        6:4      floor
-                3168 0.226 ± 0.004 (8)    0.197 ± 0.015 (10)    0.183 ± 0.036 (10)    walk        5:5      floor
-delay field, relu, t0 =2
-                 264 0.189 ± 0.010 (8)    0.150 ± 0.011 (10)    0.176 ± 0.020 (8)     heat        6:2      tie
-                1584 0.209 ± 0.002 (9)    0.180 ± 0.009 (10)    0.180 ± 0.012 (10)    walk        6:4      floor
-                3168 0.226 ± 0.004 (8)    0.209 ± 0.013 (9)     0.186 ± 0.039 (10)    walk        4:5      floor
-delay field, softplus, t0 =0.5
-                 264 0.189 ± 0.010 (8)    0.156 ± 0.007 (9)     0.160 ± 0.006 (10)    heat        5:4      tie
-                1584 0.209 ± 0.002 (9)    0.169 ± 0.006 (10)    0.178 ± 0.021 (10)    heat        7:3      floor
-                3168 0.226 ± 0.004 (8)    0.190 ± 0.053 (9)     0.187 ± 0.023 (7)     walk        3:3      floor
-delay field, softplus, t0 =2
-                 264 0.189 ± 0.010 (8)    0.153 ± 0.012 (10)    0.161 ± 0.006 (10)    heat        8:2      heat
-                1584 0.209 ± 0.002 (9)    0.172 ± 0.008 (10)    0.176 ± 0.010 (9)     heat        5:4      floor
-                3168 0.226 ± 0.004 (8)    0.181 ± 0.024 (10)    0.177 ± 0.034 (9)     heat        5:4      floor
+Table 16 reports it for grid 2 under the same rules, with paired inference in Tables A.24 and A.25
+(Appendix Appendix A), and Table 17 sets the seed votes on the two metrics side by side for every
+cell.
+     On the far-node metric the pooled test certifies the same two cells as on MAE, the heat kernel
+on the 264-satellite shell on both tasks (2 of 6 after Holm), and no direction on the larger shells; 9
+per-cell intervals exclude zero, 8 favouring the heat kernel. Under the majority rule the heat kernel
+                                                          20
+Table 15: The baseline ladder at 1000 epochs, submitted capacity: MAE (mean over valid seeds, count in parentheses)
+of SGC at four powers and of exact personalised PageRank at four restart probabilities, whose measured reach is in
+Table 2; the best rung per row, which includes the first-draft baselines of Table 14 in the competition; and the lower
+of the two spectral kernels’ means in its worst and its best t arm.
+                                                      hop field                          delay field
+     operator                                   264        1584      3168          264         1584      3168
+     constant predictor                   0.189      0.202     0.178     0.174      0.172      0.170
+     SGC K ′ =2                       0.107 (7) 0.187 (10) 0.171 (9) 0.114 (9) 0.163 (10) 0.165 (7)
+     SGC K ′ =8                       0.061 (9) 0.202 (7) 0.160 (8) 0.118 (10) 0.138 (10) 0.157 (9)
+     SGC K ′ =32                      0.101 (8) 0.158 (8) 0.131 (8) 0.147 (7) 0.135 (10) 0.139 (10)
+     SGC K ′ =64                     0.189 (10) 0.113 (7) 0.147 (7) 0.174 (10) 0.144 (8) 0.160 (5)
+     PPR exact α=0.2                  0.065 (8) 0.179 (7) 0.167 (9) 0.112 (7) 0.158 (9) 0.159 (9)
+     PPR exact α=0.05                0.069 (10) 0.156 (4) 0.150 (9) 0.124 (10) 0.134 (10) 0.149 (10)
+     PPR exact α=0.02                 0.110 (8) 0.135 (6) 0.157 (7) 0.158 (9) 0.136 (10) 0.143 (7)
+     PPR exact α=0.01                0.189 (10) 0.106 (7) 0.188 (6) 0.174 (10) 0.154 (9) 0.166 (6)
+     PPR, round 1 (α=0.05, 20 steps) 0.066 (8) 0.186 (7) 0.164 (9) 0.117 (10) 0.153 (8) 0.156 (10)
+     SGC, round 1 (K ′ =8)            0.061 (9) 0.202 (7) 0.160 (8) 0.118 (10) 0.138 (10) 0.157 (9)
+     best rung                                0.061       0.106      0.131       0.112        0.134      0.139
+     spectral, worst t arm                    0.065       0.119      0.154       0.111        0.135      0.148
+     spectral, best t arm                     0.056       0.089      0.120       0.111        0.132      0.116
 
 
 
-the metric chosen to favour reach, the operator built for reach does not win; but neither, under
-inference, does the other.
+wins in every arm at 0 of 6 task-scale cells, against 2 on MAE; 4 cells reach p < 0.05 before per-cell
+correction and 0 after. The same runs, scored on the two metrics, move the seed vote by a median of
+1 and up to 3 seeds, and by two or more in 9 of 24 cells. That is the noise amplitude of the majority
+statistic, measured on the data themselves, and it is the size of the margins by which the majority
+verdicts of Tables 7 and 9 were declared. On the metric chosen to favour reach, the operator built
+for reach leads in mean on both large shells of the hop field, with seed votes of 3:7 and 3:7 and
+pooled intervals that just exclude zero, and the corrected p of 0.422 and 0.422 certifies neither;
+the minimum detectable effects there, 0.088 and 0.070, are larger than the observed differences of
++0.0335 and +0.0258. It is the cell the preliminary version built its case on, and the honest reading
+is that a lead of this size needs more than ten seeds to certify.
 
-5.5. Sensitivity of the reading rules
-    Table 15 repeats the two rule-dependent counts of this paper at other values of the rules: the
+5.5. The seam-cut graph
+    Every run above is on the torus. The seam-cut graph removes the inter-plane links between
+the last and the first plane, so that 2S satellites have degree three, the graph is no longer vertex-
+transitive, and a destination’s hop field depends on where it sits relative to the seam. It is the
+graph both versions of this study said they used. Grid 2 is repeated on it at 1000 epochs, submitted
+capacity, in 1 t arms with the three operators (180 runs, of which 24, 13.3%, are excluded under
+rule 2) and with the first-draft fixed-reach baselines (120 runs), and read by the same six rules.
+Table 18 sets the softplus, t0 = 0.5 arm on the two graphs side by side; Tables A.26 and 19 give
+every arm and the pooled test.
+    Two things change and one does not. First, the instances now differ: training and test error
+separate by up to 0.009, and the GCN’s seed dispersion, which was 0.012 or less on the torus,
+grows to the level of the spectral kernels’. Second, the hop field at 1584 satellites moves. In the
+softplus, t0 = 0.5 arm the walk kernel reaches 0.065 against 0.113 for the heat kernel, a 0:8 seed
+vote at Wilcoxon p = 0.008; pooled over the 1 arms the vote is 0:8 with d¯ = +0.0364 and corrected
+p = 0.039, and the walk kernel wins in every arm under the majority rule at 1 of the six task-scale
+                                                          21
+Table 16: Grid 2, far-node error at 1000 epochs, submitted capacity: the constant predictor’s far-node error, then
+mean ± sd over valid seeds with the count in parentheses for each operator, the operator leading in mean, the seed
+votes, and the majority verdict of rule 4 applied to this metric with the floor of rule 3 computed against the far-node
+constant.
+ task, t arm    N const GCN                     heat                 walk                   leader heat:walk verdict
+ hops field, relu, t0 =0.5
+                 264 0.255 0.211 ± 0.003 (8)   0.109 ± 0.066 (9)    0.186 ± 0.057 (10) heat         7:2     heat
+               1584 0.258 0.257 ± 0.016 (9)    0.198 ± 0.063 (6)    0.227 ± 0.049 (10) heat         3:3     n<7
+               3168 0.245 0.243 ± 0.005 (9)    0.236 ± 0.051 (9)    0.220 ± 0.043 (9) walk          2:6     tie
+ hops field, relu, t0 =2
+                 264 0.255 0.211 ± 0.003 (8)   0.083 ± 0.012 (9)    0.139 ± 0.054 (9)    heat       8:0     heat
+               1584 0.258 0.257 ± 0.016 (9)    0.203 ± 0.033 (8)    0.142 ± 0.079 (8)    walk       2:5     tie
+               3168 0.245 0.243 ± 0.005 (9)    0.230 ± 0.028 (7)    0.209 ± 0.057 (5)    walk       1:3     n<7
+ hops field, softplus, t0 =0.5
+                 264 0.255 0.211 ± 0.003 (8)   0.090 ± 0.010 (10) 0.100 ± 0.008 (10) heat           6:4     tie
+               1584 0.258 0.257 ± 0.016 (9)    0.149 ± 0.035 (10) 0.134 ± 0.063 (8) walk            2:6     tie
+               3168 0.245 0.243 ± 0.005 (9)    0.200 ± 0.040 (7) 0.180 ± 0.069 (8) walk             2:3     n<7
+ hops field, softplus, t0 =2
+                 264 0.255 0.211 ± 0.003 (8)   0.093 ± 0.008 (9)    0.105 ± 0.012 (9)    heat       5:3     tie
+               1584 0.258 0.257 ± 0.016 (9)    0.158 ± 0.041 (7)    0.112 ± 0.055 (8)    walk       2:4     n<7
+               3168 0.245 0.243 ± 0.005 (9)    0.216 ± 0.048 (8)    0.187 ± 0.056 (9)    walk       2:5     tie
+ delay field, relu, t0 =0.5
+                 264 0.230 0.189 ± 0.010 (8)   0.152 ± 0.009 (10) 0.178 ± 0.017 (7) heat            7:0     heat
+               1584 0.213 0.209 ± 0.002 (9)    0.183 ± 0.014 (10) 0.197 ± 0.020 (10) heat           6:4     tie
+               3168 0.227 0.226 ± 0.004 (8)    0.197 ± 0.015 (10) 0.183 ± 0.036 (10) walk           5:5     tie
+ delay field, relu, t0 =2
+                 264 0.230 0.189 ± 0.010 (8)   0.150 ± 0.011 (10) 0.176 ± 0.020 (8) heat            6:2     tie
+               1584 0.213 0.209 ± 0.002 (9)    0.180 ± 0.009 (10) 0.180 ± 0.012 (10) walk           6:4     tie
+               3168 0.227 0.226 ± 0.004 (8)    0.209 ± 0.013 (9) 0.186 ± 0.039 (10) walk            4:5     tie
+ delay field, softplus, t0 =0.5
+                 264 0.230 0.189 ± 0.010 (8)   0.156 ± 0.007 (9) 0.160 ± 0.006 (10) heat            5:4     tie
+               1584 0.213 0.209 ± 0.002 (9)    0.169 ± 0.006 (10) 0.178 ± 0.021 (10) heat           7:3     heat
+               3168 0.228 0.226 ± 0.004 (8)    0.190 ± 0.053 (9) 0.187 ± 0.023 (7) walk             3:3     n<7
+ delay field, softplus, t0 =2
+                 264 0.230 0.189 ± 0.010 (8)   0.153 ± 0.012 (10) 0.161 ± 0.006 (10) heat           8:2     heat
+               1584 0.213 0.209 ± 0.002 (9)    0.172 ± 0.008 (10) 0.176 ± 0.010 (9) heat            5:4     tie
+               3168 0.227 0.226 ± 0.004 (8)    0.181 ± 0.024 (10) 0.177 ± 0.034 (9) heat            5:4     tie
+
+
+
+cells, the heat kernel at 1. The preliminary version’s direction at 1584 satellites, which the torus
+does not reproduce, is therefore recovered on the graph the preliminary version described, on its
+task, in 1 of the six pooled tests after correction. What does not change is the rest of the grid:
+the pooled leaders agree with the torus in 5 of six (task, shell) pairs, the heat kernel keeps the
+264-satellite shell on both tasks (corrected p = 0.023 and 0.586), and the delay field certifies no
+direction on the large shells (5:2 and 6:4, corrected p = 0.688 and 0.336). The far-node metric
+(Table A.28) certifies 0 of six.
+    The reading is not that the walk kernel is the better operator on seam-cut graphs. It is that
+a single link pattern, the seam, moves one cell of the grid from “no direction” to “walk” at the
+corrected level, on one task, while the other five cells stay where they were; an operator ranking
+on these graphs is a property of the graph family as much as of the operators, and the preliminary
+version, which reported the seam-cut result without having run it, was right about the direction
+                                                          22
+Table 17: The same runs scored on two metrics. For each arm-level cell, the seed votes heat:walk on MAE and on
+far-node error, how many votes moved, and the majority verdicts on the two metrics.
+       task      N t arm                  MAE heat:walk far-node heat:walk moved verdict MAE / far-node
+       hops     264   relu, t0 =0.5            8:1              7:2           1          heat / heat
+       hops     264   relu, t0 =2              8:0              8:0           0          heat / heat
+       hops     264   softplus, t0 =0.5        7:3              6:4           1           heat / tie
+       hops     264   softplus, t0 =2          7:1              5:3           2           heat / tie
+       hops    1584   relu, t0 =0.5            4:2              3:3           1          n<7 / n<7
+       hops    1584   relu, t0 =2              3:4              2:5           1            tie / tie
+       hops    1584   softplus, t0 =0.5        2:6              2:6           0            tie / tie
+       hops    1584   softplus, t0 =2          2:4              2:4           0          n<7 / n<7
+       hops    3168   relu, t0 =0.5            5:3              2:6           3            tie / tie
+       hops    3168   relu, t0 =2              3:1              1:3           2          n<7 / n<7
+       hops    3168   softplus, t0 =0.5        2:3              2:3           0          n<7 / n<7
+       hops    3168   softplus, t0 =2          5:2              2:5           3            tie / tie
+       delay    264   relu, t0 =0.5            7:0              7:0           0          heat / heat
+       delay    264   relu, t0 =2              7:1              6:2           1           heat / tie
+       delay    264   softplus, t0 =0.5        7:2              5:4           2           heat / tie
+       delay    264   softplus, t0 =2          9:1              8:2           1          heat / heat
+       delay   1584   relu, t0 =0.5            8:2              6:4           2           heat / tie
+       delay   1584   relu, t0 =2              8:2              6:4           2           heat / tie
+       delay   1584   softplus, t0 =0.5        8:2              7:3           1          heat / heat
+       delay   1584   softplus, t0 =2          4:5              5:4           1            tie / tie
+       delay   3168   relu, t0 =0.5            6:4              5:5           1            tie / tie
+       delay   3168   relu, t0 =2              4:5              4:5           0            tie / tie
+       delay   3168   softplus, t0 =0.5        1:5              3:3           2          n<7 / n<7
+       delay   3168   softplus, t0 =2          3:6              5:4           2            tie / tie
+
+
+
+at that cell for the wrong reason. The learned t tells the same story from the other side: on the
+seam-cut graph the heat kernel’s first-layer t at 1584 satellites is 9.1 against 8.2 on the torus, and
+the walk kernel’s 3.8 against 1.9.
+
+Table 18: Torus and seam-cut graph side by side, 1000 epochs, submitted capacity, softplus arm with t0 = 0.5:
+the constant predictor, the three operators (mean ± sd over valid seeds, count in parentheses), the two first-draft
+fixed-reach baselines, the seed vote, the Wilcoxon p and the operator leading in mean.
+task    N graph        const GCN                 heat            walk             PPR/SGC       heat:walk    pW leader
+hops   264 torus    0.189 0.137 ± 0.002 (8) 0.058 ± 0.005 (10) 0.064 ± 0.004 (10) 0.066/0.061      7:3      0.049   heat
+       264 seam cut 0.203 0.146 ± 0.015 (7) 0.066 ± 0.006 (10) 0.073 ± 0.012 (10) 0.062/0.075      9:1      0.004   heat
+hops 1584 torus     0.202 0.193 ± 0.004 (9) 0.101 ± 0.037 (10) 0.099 ± 0.057 (8) 0.186/0.202       2:6      0.641   walk
+      1584 seam cut 0.208 0.198 ± 0.012 (7) 0.113 ± 0.042 (9) 0.065 ± 0.010 (8) 0.160/0.159        0:8      0.008   walk
+hops 3168 torus     0.178 0.173 ± 0.002 (9) 0.135 ± 0.032 (7) 0.120 ± 0.047 (8) 0.164/0.160        2:3      0.812   walk
+      3168 seam cut 0.185 0.180 ± 0.009 (10) 0.098 ± 0.013 (8) 0.083 ± 0.018 (7) 0.156/0.159       2:4      0.312   walk
+delay 264 torus     0.174 0.133 ± 0.008 (8) 0.111 ± 0.003 (9) 0.112 ± 0.004 (10) 0.117/0.118       7:2      0.129   heat
+       264 seam cut 0.179 0.135 ± 0.007 (9) 0.102 ± 0.011 (9) 0.108 ± 0.009 (9) 0.108/0.108        6:2      0.195   heat
+delay 1584 torus    0.172 0.163 ± 0.003 (9) 0.132 ± 0.004 (10) 0.139 ± 0.013 (10) 0.153/0.138      8:2      0.037   heat
+      1584 seam cut 0.169 0.162 ± 0.009 (9) 0.124 ± 0.004 (10) 0.125 ± 0.008 (7) 0.131/0.131       5:2      0.688   heat
+delay 3168 torus    0.170 0.165 ± 0.003 (8) 0.140 ± 0.033 (9) 0.129 ± 0.024 (7) 0.156/0.157        1:5      0.156   walk
+      3168 seam cut 0.169 0.166 ± 0.005 (7) 0.104 ± 0.010 (10) 0.123 ± 0.028 (10) 0.146/0.145      6:4      0.084   heat
+
+
+
+
+                                                          23
+Table 19: Seam-cut graph, MAE: the pooled form of rule 6, one test per (task, shell), with the columns of Table 12.
+                                   d¯ over arms                  two-sided p
+          task      N seeds     mean              95% CI      sign Wilcoxon Holm (6) heat:walk MDE
+          hops     264   10   −0.0079   [−0.0139, −0.0028]   0.021    0.004    0.023∗         9:1   0.015
+          hops    1584    8   +0.0364   [+0.0223, +0.0523]   0.008    0.008    0.039∗         0:8   0.047
+          hops    3168    6   +0.0135   [−0.0074, +0.0339]   0.688    0.312     0.625         2:4      —
+          delay    264    8   −0.0056   [−0.0129, +0.0018]   0.289    0.195     0.586         6:2   0.022
+          delay   1584    7   −0.0010   [−0.0055, +0.0039]   0.453    0.688     0.688         5:2      —
+          delay   3168   10   −0.0190   [−0.0341, −0.0040]   0.754    0.084     0.336         6:4   0.039
+
+
+5.6. Sensitivity of the reading rules
+    Table 20 repeats the two rule-dependent counts of this paper at other values of the rules: the
 number of task-scale cells in which each kernel wins in every arm under the majority rule, at floors
 of 1%, 2%, 5% and 10% and at majorities of six, seven and eight of ten; and the number of large-
 shell hop-field cells of grid 1 that are rankable at each floor. The statement that no operator learns
 on the large shells at 200 epochs holds at 5% and 10%, weakens to 2 of 24 cells at 2% and 5 at 1%,
-all on the 1584-satellite shell; the inference of Section 5.3 does not depend on the floor.
+all on the 1584-satellite shell. The left block of the table is flat in the floor because every grid-2
+cell clears even a 10% floor, and its one movement is in the majority threshold: at eight of ten the
+two heat-majority cells become 0 heat and 0 walk, so the only majority result that survives rule 5
+disappears under a one-seed tightening of the vote. The pooled inference of Section 5.3 depends on
+neither threshold.
 
-5.6. Long training collapses a tenth of the runs
-   Of the 720 runs of grid 2, 87 (12.1%) were excluded under rule 2. Inspection shows one pattern:
-the loss falls, then rises again by up to 88%, and the run ends on the constant solution. Table 16
-
-                                                         17
-                 Table 13: Grid 2, far-node error: paired inference across seeds, as in Table 9.
-             task, t arm       N    ēheat − ēwalk               95% CI      psign   pWilcoxon   pHolm
-             hops field, relu, t0 =0.5
-             hops field, relu, t0 =2
-             hops field, softplus, t0 =0.5
-             hops field, softplus, t0 =2
-             delay field, relu, t0 =0.5
-             delay field, relu, t0 =2
-             delay field, softplus, t0 =0.5
-             delay field, softplus, t0 =2
-                              264          -0.0726       [-0.1156, -0.0258]   0.180      0.039    0.820
-                             1584          -0.0120     [-0.0818, +0.0458]     1.000      1.000    1.000
-                             3168         +0.0214      [-0.0211, +0.0631]     0.289      0.383    1.000
-                              264          -0.0624       [-0.1052, -0.0252]   0.008      0.008    0.188
-                             1584         +0.0660      [-0.0015, +0.1277]     0.453      0.109    1.000
-                             3168         +0.0347     [+0.0016, +0.0873]      0.625      0.250    1.000
-                              264          -0.0103       [-0.0189, -0.0017]   0.754      0.105    1.000
-                             1584         +0.0200      [-0.0254, +0.0574]     0.289      0.641    1.000
-                             3168         +0.0052      [-0.0692, +0.0641]     1.000      0.812    1.000
-                              264          -0.0117       [-0.0214, -0.0018]   0.727      0.109    1.000
-                             1584         +0.0377      [-0.0238, +0.0861]     0.688      0.312    1.000
-                             3168         +0.0269      [-0.0094, +0.0637]     0.453      0.297    1.000
-                              264          -0.0273       [-0.0373, -0.0181]   0.016      0.016    0.359
-                             1584          -0.0139       [-0.0290, -0.0001]   0.754      0.232    1.000
-                             3168         +0.0141      [-0.0117, +0.0418]     1.000      0.492    1.000
-                              264          -0.0251       [-0.0446, -0.0069]   0.289      0.109    1.000
-                             1584         +0.0007      [-0.0037, +0.0053]     0.754      0.695    1.000
-                             3168         +0.0178      [-0.0054, +0.0434]     1.000      0.359    1.000
-                              264          -0.0033     [-0.0076, +0.0012]     1.000      0.359    1.000
-                             1584          -0.0081     [-0.0213, +0.0032]     0.344      0.193    1.000
-                             3168         +0.0274      [-0.0125, +0.0813]     1.000      0.438    1.000
-                              264          -0.0082       [-0.0138, -0.0023]   0.109      0.037    0.816
-                             1584          -0.0023     [-0.0102, +0.0049]     1.000      0.910    1.000
-                             3168          -0.0011     [-0.0260, +0.0235]     1.000      1.000    1.000
+Table 20: Sensitivity of the rule-dependent counts to the floor threshold g and the majority threshold. Left: task-
+scale cells of grid 2 in which the heat / walk kernel wins in every arm under rule 4 at the given majority. Right:
+hop-field cells of grid 1 at 1584 satellites and above that are rankable at the given floor.
+floor g    majority ≥ 6/10              ≥ 7/10               ≥ 8/10       rankable cells (grid 1, ≥1584, hop)
+0.01        2 heat / 0 walk      2 heat / 0 walk      0 heat / 0 walk                     5 of 24
+0.02        2 heat / 0 walk      2 heat / 0 walk      0 heat / 0 walk                     2 of 24
+0.05        2 heat / 0 walk      2 heat / 0 walk      0 heat / 0 walk                     0 of 24
+0.10        2 heat / 0 walk      2 heat / 0 walk      0 heat / 0 walk                     0 of 24
 
 
-
+5.7. Long training collapses a tenth of the runs
+    Of the 720 runs of grid 2, 87 (12.1%) were excluded under rule 2. Inspection shows one pattern:
+the loss falls, then rises again by up to 88%, and the run ends on the constant solution. Table 21
 breaks the count down by operator and records whether each excluded run had escaped the constant
 solution before collapsing: the GCN collapses in 36/240 runs (12 of them escapers), the heat kernel
-in 24/240 (7) and the walk kernel in 27/240 (10). The instability is not specific to the spectral
-operators or to the learned t, and because most excluded runs had not escaped, exclusion removes
-non-escaping runs preferentially and every surviving mean is biased toward the escapers; the GCN,
-with the highest exclusion rate, is biased most. The paired tests of Section 5.3 are computed on
-the seeds valid for both kernels, so a seed removed for one kernel is removed for both. A fixed
-learning rate that is adequate for 200 epochs is not stable for 1000 on these graphs; we report the
-rate rather than tune it away.
+in 24/240 (7) and the walk kernel in 27/240 (10); the fixed-reach baselines of (5) collapse in 8/60
+(PPR) and 7/60 (SGC) runs. The instability is not specific to the spectral operators or to the
+learned t, and because most excluded runs had not escaped, exclusion removes non-escaping runs
+preferentially and every surviving mean is biased toward the escapers; the GCN, with the highest
+exclusion rate, is biased most. The paired tests of Section 5.3 are computed on the seeds valid for
+both kernels, so a seed removed for one kernel is removed for both. A fixed learning rate that is
+adequate for 200 epochs is not stable for 1000 on these graphs; we report the rate rather than tune
+it away.
+                                                        24
+Table 21: Runs excluded as pathologies (loss rising by more than 1% between thirds) out of runs, 1000 epochs,
+submitted capacity, both tasks and all t arms pooled, and whether the excluded run had escaped the constant
+solution (MAE below 90% of the constant predictor) before collapsing.
+                operator     excluded     of which had escaped         of which at floor       valid
+                GCN            36/240                            12                     24      204
+                heat           24/240                             7                     17      216
+                walk           27/240                            10                     17      213
+                PPR               8/60                            2                      6       52
+                SGC               7/60                            4                      3       53
 
-5.7. Cost, and the scale at which the method is feasible
-   Table 17 reports the median wall-clock time per run on one consumer GPU with 24 GB of
+
+Which runs collapse depends on the floating-point precision. The eigenpairs are cached in single
+precision, and the first draft’s check that cached and recomputed eigenpairs agree was a check
+of determinism, not of adequacy. The direct test is to rerun a cell with every tensor in double
+precision. Table 22 does so for the hop field at 1584 satellites, softplus arm with t0 = 0.5, all ten
+seeds and all three operators (30 runs). The GCN’s per-seed error moves by at most 0.0075. The
+two kernels’ per-seed errors move by up to 0.1285 (heat) and 0.1552 (walk), which is the distance
+between the escaped and the constant solution: the same seed, with the same initial weights and
+the same instances, escapes in one precision and collapses in the other, and 3 runs are excluded as
+pathologies in single precision against 3 in double, on different seeds. The mean paired difference
+ēheat − ēwalk in this cell is +0.0076 in single precision and -0.0141 in double, with a 4:4 vote in
+double. A training trajectory that a change of rounding can move from one basin to the other is
+chaotic in the practical sense, and for the spectral kernels at this scale the precision acts as one
+more random seed. It does not affect all arms alike, as the first draft’s threat statement assumed;
+it affects each run separately, and the seed-level bimodality of Section 5.2 is its visible form.
+
+Table 22: The same cell in single and double precision: hop field, 1584 satellites, 1000 epochs, submitted capacity,
+softplus arm with t0 = 0.5. Mean MAE over the ten seeds (pathological runs included, since which runs are
+pathological is part of the result) in each precision, and the largest change of a single seed’s MAE between the two.
+                 operator     seeds    MAE float32       MAE float64        max |∆| over seeds
+                 GCN             10            0.1930            0.1934                      0.0075
+                 heat            10            0.1010            0.0979                      0.1285
+                 walk            10            0.1194            0.1052                      0.1552
+
+
+5.8. Cost, and the scale at which the method is feasible
+    Table 23 reports the median wall-clock time per run on one consumer GPU with 24 GB of
 memory, with the eigendecomposition of each instance cached. The spectral operators build an
 N × N propagator per layer per instance per epoch from the eigenbasis, an O(N 3 ) product that
 dominates at scale; the walk kernel builds two such products, for the real and imaginary parts, and
-
-                                                           18
-Table 14: The same runs scored on two metrics. For each arm-level cell, the seed votes heat:walk on MAE and on
-far-node error, how many votes moved, and the majority verdicts on the two metrics.
-   task      N    t arm               MAE heat:walk    far-node heat:walk     moved   verdict MAE / far-node
-   hops     264   relu, t0 =0.5            8:1                 7:2              1           heat / heat
-   hops     264   relu, t0 =2              8:0                 8:0              0           heat / heat
-   hops     264   softplus, t0 =0.5        7:3                 6:4              1            heat / tie
-   hops     264   softplus, t0 =2          7:1                 5:3              2            heat / tie
-   hops    1584   relu, t0 =0.5            4:2                 3:3              1           n<7 / floor
-   hops    1584   relu, t0 =2              3:4                 2:5              1             tie / tie
-   hops    1584   softplus, t0 =0.5        2:6                 2:6              0             tie / tie
-   hops    1584   softplus, t0 =2          2:4                 2:4              0           n<7 / n<7
-   hops    3168   relu, t0 =0.5            5:3                 2:6              3            tie / floor
-   hops    3168   relu, t0 =2              3:1                 1:3              2           n<7 / floor
-   hops    3168   softplus, t0 =0.5        2:3                 2:3              0           n<7 / floor
-   hops    3168   softplus, t0 =2          5:2                 2:5              3            tie / floor
-   delay    264   relu, t0 =0.5            7:0                 7:0              0           heat / heat
-   delay    264   relu, t0 =2              7:1                 6:2              1            heat / tie
-   delay    264   softplus, t0 =0.5        7:2                 5:4              2            heat / tie
-   delay    264   softplus, t0 =2          9:1                 8:2              1           heat / heat
-   delay   1584   relu, t0 =0.5            8:2                 6:4              2           heat / floor
-   delay   1584   relu, t0 =2              8:2                 6:4              2           heat / floor
-   delay   1584   softplus, t0 =0.5        8:2                 7:3              1           heat / floor
-   delay   1584   softplus, t0 =2          4:5                 5:4              1            tie / floor
-   delay   3168   relu, t0 =0.5            6:4                 5:5              1            tie / floor
-   delay   3168   relu, t0 =2              4:5                 4:5              0            tie / floor
-   delay   3168   softplus, t0 =0.5        1:5                 3:3              2           n<7 / floor
-   delay   3168   softplus, t0 =2          3:6                 5:4              2            tie / floor
-
-
-Table 15: Sensitivity of the rule-dependent counts to the floor threshold g and the majority threshold. Left: task-
-scale cells of grid 2 in which the heat / walk kernel wins in every arm under rule 4 at the given majority. Right:
-hop-field cells of grid 1 at 1584 satellites and above that are rankable at the given floor.
-floor g    majority ≥ 6/10            ≥ 7/10              ≥ 8/10            rankable cells (grid 1, ≥1584, hop)
-0.01       2 heat / 0 walk       2 heat / 0 walk      0 heat / 0 walk                     5 of 24
-0.02       2 heat / 0 walk       2 heat / 0 walk      0 heat / 0 walk                     2 of 24
-0.05       2 heat / 0 walk       2 heat / 0 walk      0 heat / 0 walk                     0 of 24
-0.10       2 heat / 0 walk       2 heat / 0 walk      0 heat / 0 walk                     0 of 24
-
-
 squares them. On the 4400-satellite shell at 200 epochs a walk run takes 169 s against 81 s for the
 heat kernel and 21 s for the GCN, whose propagator is sparse. On CPU, before caching, the same
 cell took 1096 s, which is why the preliminary version stopped at 1584 satellites. As implemented,
 with dense N × N single-precision matrices for the eigenbasis, the propagator and their gradients,
-the method fits in 24 GB up to roughly N = 19300 nodes; beyond that it needs a factorised or
+                                                         25
+the method fits in 24 GB up to roughly N = 19300 nodes; beyond that it needs a factorised or
 sparse propagator, which is a different implementation. The mega-constellations of the introduction
 lie at the edge of that range and beyond it. For a comparison across scales, the cost of the operator
 is part of what is being compared.
 
-
-
-
-                                                        19
-Table 16: Runs excluded as pathologies (loss rising by more than 1% between thirds) out of runs, 1000 epochs,
-submitted capacity, both tasks and all t arms pooled, and whether the excluded run had escaped the constant
-solution (MAE below 90% of the constant predictor) before collapsing.
-               operator     excluded        of which had escaped    of which at floor       valid
-               GCN            36/240                          12                       24    204
-               heat           24/240                           7                       17    216
-               walk           27/240                          10                       17    213
-
-
-Table 17: Median wall-clock seconds per training run on one GPU (eigendecomposition cached), submitted capacity,
+Table 23: Median wall-clock seconds per training run on one GPU (eigendecomposition cached), submitted capacity,
 by shell and operator, at the two budgets. The 4400-satellite shell was not run at 1000 epochs.
-                                        200 epochs                 1000 epochs
-                          N       GCN         heat   walk     GCN       heat   walk
-                          264           6        8     9           28    40       42
-                          1584          8       10    11           30    42       45
-                          3168         13       29    54           36   114      255
-                          4400         21       81   169           —     —        —
+                                       200 epochs                1000 epochs
+                          N       GCN      heat    walk       GCN      heat    walk
+                          264          6       8      9          28      40      42
+                          1584         8      10     11          30      42      45
+                          3168        13      29     54          36     114     255
+                          4400        21      81    169          —       —       —
+
 
 
 6. Discussion
@@ -1056,42 +1325,64 @@ It is a real nonnegative row-stochastic matrix, exactly as the heat kernel is, a
 features damps and mixes them as a diffusion step does; what it inherits from the walk is the shape
 of its rows, an oscillatory profile whose width grows linearly with t rather than as a square root
 (Figure 1). Once t is a trained parameter, the heat kernel reaches as far by learning a larger t,
-which the right panel of Figure 5 shows it does, in the first layer and in proportion to the shell.
-That the two kernels are then indistinguishable is what the operator definitions make plausible,
-and it is what the paired tests find. The argument of CTQW-GNN [12] for the unitary propagator
-in feature space, which damps no frequency and preserves feature norm, is a different object and is
-neither confirmed nor refuted here.
+which the right panel of Figure 5 and Table 2 show it does, in the first layer and in proportion to
+the shell. What the paired tests find has to be stated in two halves. Where the design has power,
+on the 264-satellite shell, the heat kernel is better on both tasks, on both graphs, in every arm
+(Tables 12 and 19); 7 of the 10 per-cell intervals that exclude zero are on that shell, and they point
+the same way. On the larger shells of the torus the tests certify nothing, and the reason is stated in
+MAE units: the minimum detectable effect there is 0.014 to 0.087, and the observed differences are
+smaller. That is absence of evidence, not evidence of absence, and the first draft’s sentence that
+the kernels “are indistinguishable” overstated a null in the same way that the preliminary version
+overstated a difference. On the seam-cut graph the walk kernel takes the 1584-satellite hop field
+at the corrected level. The argument of CTQW-GNN [12] for the unitary propagator in feature
+space, which damps no frequency and preserves feature norm, is a different object and is neither
+confirmed nor refuted here.
 
 What the floor means for learned propagation on constellations. A budget that suffices on a 264-
 satellite shell does not on a 1584-satellite one, and the failure is silent: the run reports a finite,
-decreasing loss and an error that looks like a number. Comparisons of learned propagation across
-constellation sizes that hold the budget fixed will rank noise unless they carry the constant baseline
-beside every result.
+decreasing loss and an error that looks like a number. Carrying the constant baseline beside every
+result is necessary and not sufficient: at 200 epochs the gains over it on the large shells were positive
+in every cell (Table 5), and what exposed the floor was a threshold on the gain, whose value this
+study set with the 4400-satellite cells in view (Section 4.2). The operative safeguard is a gain
+threshold fixed and justified before the runs, and a budget that is shown to clear it on every shell;
+the present study can only report that its own threshold was post hoc and that its conclusions hold
+at four values of it.
 
-What the seed-level bimodality and the vote noise mean. The split in Figure 4, with escape rates
+                                                      26
+What the seed-level bimodality and the vote noise mean. The split in Figure 4, with escape rates
 of 57% and 58% (p = 0.95), means that at the preliminary budget a majority verdict counts which
 seeds happened to escape. At the larger budget the majority statistic still moves by up to 3 seeds
 between two correlated metrics on the same runs (Section 5.4), which is the margin by which most
 of its verdicts were declared. The preliminary version’s 3-seed result at 1584 satellites sits inside
-the range that this bimodality produces; its direction is not confirmed at ten seeds and, under
-inference, no direction is.
+the range that this bimodality produces on the torus, where ten seeds split 5:5; on the seam-cut
+graph the same cell splits 0:8 in the preliminary direction. The bimodality itself is not a property
+of the seeds: Section 5.7 shows that the precision of the arithmetic moves a seed between the two
+modes, so the split is a property of the training dynamics at this scale, and the number of seeds
+only measures it.
 
-                                                       20
-Consequences for reporting. These are not new rules, and they are not the contribution; they
-are what this audit needed to avoid repeating its own preliminary version. Carry the constant
-predictor beside every result. Let the budget grow with the graph, or show that it need not. Treat
-any learned reach parameter’s parameterisation and initialisation as an arm. Use a paired test with
-a multiplicity correction, and state the false-positive rate of any vote rule that is reported beside
-it. Count collapsed runs and report whether they had escaped.
+Consequences for reporting. These are not new rules, and they are not the contribution; they are
+what this audit needed to avoid repeating its own preliminary version, and two of them are what
+its own first draft needed and lacked. Carry the constant predictor beside every result, on every
+metric. Let the budget grow with the graph, or show that it need not. Treat any learned reach
+parameter’s parameterisation and initialisation as an arm. Measure the reach of a “reach-matched”
+baseline. Use a paired test with a multiplicity correction, state the false-positive rate of any vote
+rule reported beside it, and state the minimum effect the corrected test can detect, since a null
+from a test that could not reject is not a finding. Count collapsed runs and report whether they
+had escaped. Check that the graph the code builds is the graph the text describes, by a property
+the text can be wrong about, such as the degree sequence.
 
 What would change the verdict. A propagator applied in feature space, unitary rather than stochas-
 tic, would test the argument of CTQW-GNN [12] directly; the wave-type models PDE-GCN [24]
-and graph-coupled oscillator networks [25] are the classical form of the same argument and were not
-run. A learning-rate schedule would reduce the collapse rate of Section 5.6 and might decide cells
-that are now undecided. A task with load, in which the field to be predicted depends on traffic and
-not only on geometry, and a time-varying evaluation that exercises the link churn the introduction
-invokes, would say whether any operator ranking survives contact with a network function. None
-of these is a small addition, and the present paper claims nothing about them.
+and graph-coupled oscillator networks [25] are the classical form of the same argument and were
+not run. A learning-rate schedule would reduce the collapse rate of Section 5.7, and with it the
+chaotic sensitivity to precision, and might decide cells that are now undecided; more seeds would
+lower the minimum detectable effect of the pooled tests, which at 1584 satellites on the hop field
+is 0.087 with ten. Other link patterns than the torus and the seam cut, and the time-varying links
+of a real constellation, would say how far the seam-cut result of Section 5.5 generalises. A task
+with load, in which the field to be predicted depends on traffic and not only on geometry, and a
+time-varying evaluation that exercises the link churn the introduction invokes, would say whether
+any operator ranking survives contact with a network function. None of these is a small addition,
+and the present paper claims nothing about them.
 
 7. Threats to validity
 
@@ -1103,62 +1394,199 @@ that motivates learned propagation on these graphs is never exercised.
 from load, which is what the comparison needs, at the cost of distance from any routing or traffic-
 engineering objective. The findings bear on the evaluation of propagation operators, not on the
 routing or resource-management systems that might use them.
-    The floor threshold was chosen with the data in view. Rule 3’s value was set after the
-4400-satellite cells were seen, as Section 4.2 states; Table 15 reports every dependent count at four
+
+
+                                                 27
+    The floor threshold was chosen with the data in view. Rule 3’s value was set after the
+4400-satellite cells were seen, as Section 4.2 states; Table 20 reports every dependent count at four
 values of it.
-    The majority rule has a 34.4% null false-positive rate. It is kept only so that the
-preliminary verdicts are reproducible, and no conclusion rests on it; the inference of rule 6 is what
-the paper stands on.
+    The majority rule has a 34.4% null false-positive rate, and the per-cell test has
+almost no power. The majority rule is kept only so that the preliminary verdicts are reproducible,
+and no conclusion rests on it. The per-cell Holm-corrected Wilcoxon test that the first draft stood
+on cannot reject in 18 of 24 cells at any effect size (Table 3); it is reported as description. The
+pooled test the paper now stands on has ten seeds per test and a minimum detectable effect that
+is stated beside every result; on the large shells it is 0.014 to 0.087 in MAE units, which is coarse.
+    The baseline ladder is a ladder, not a tuning. α and K ′ take four values each, chosen
+to bracket the measured reach of the kernels, and the best rung is selected on the same seeds the
+comparison is scored on, which favours the baselines. A finer search might find a better fixed reach;
+it might also find a worse one, since the ladder’s top rung already over-smooths the small shell.
     Exclusion is differential. Rule 2 removes runs after they have collapsed to the constant
 solution, so it removes non-escapers preferentially, and the GCN loses more runs than the spectral
-kernels (Table 16). Means are therefore optimistic, most for the GCN.
+kernels (Table 21). Means are therefore optimistic, most for the GCN.
     One learning rate, one optimiser, six evaluation instances per seed. The collapse rate
 is specific to Adam at 0.01 for 1000 epochs. Each seed evaluates on its own six instances, so the
 sixty instances of a cell are distinct, but instance-level dispersion within a seed is not reported.
-    The eigenbasis is cached in single precision. Training already casts the eigenpairs to single
-precision, so caching them is numerically identical to recomputing, and the cached and recomputed
-runs of a test cell agreed to 16 significant digits; but every arm shares one eigendecomposition per
-instance, and a numerical error in it would affect all arms alike.
+    The arithmetic is single precision, and the trajectories are chaotic. Every arm shares
+one single-precision eigendecomposition per instance. Section 5.7 shows that rerunning a cell in
+double precision moves individual seeds between the escaped and the collapsed mode and changes
+the sign of the cell’s mean paired difference. The comparison between kernels within a precision is
+fair, since both see the same rounding; but any single run’s outcome at 1584 satellites and above
+is not reproducible across precisions, and a result that rests on a handful of seeds at that scale,
+including the preliminary version’s, is a sample from this chaos.
     Several references are preprints. CTQW-GNN [12], CTQWformer [13] and the LEO graph-
 learning work of Gu et al. [4] are unrefereed at the time of writing, and GraphQWalk [14] is a recent
 journal article. The argument this audit declines to test rests on the first of these; the audit itself
 rests on the preliminary version, which is not in the refereed record either.
-                                                  21
-    The preliminary artifact does not reproduce its own headline. The released results of
-the preliminary version record 3301 parameters for the 1584-satellite experiment, which corresponds
-to the width-32, four-layer network its text describes, while the released code defaults to width 16
-and three layers (612 parameters) and contains no script for that experiment. The preliminary
-version also ran without the seam cut that its text states. The present study fixes the seam cut on,
-runs both capacities, and releases the script for every number.
+    The preliminary artifact does not reproduce its own headline, and both versions
+misdescribed their graph. The released results of the preliminary version record 3301 parameters
+for the 1584-satellite experiment, which corresponds to the width-32, four-layer network its text
+describes, while the released code defaults to width 16 and three layers (612 parameters) and
+contains no script for that experiment. Both the preliminary version and the first drafts of this
+paper state that the counter-rotating seam is cut. In the generator the flag seam=True keeps the
+seam links, and every run of the two main grids was made with it; a docstring written for this study
+read the flag the other way, and the text copied the docstring. The error was found by reading
+Table 13, where training and test error coincide, and confirmed by the degree sequence: every node
+of every main-grid snapshot has degree four. The main grids are therefore on the torus, described
+as such throughout this version, and the seam-cut graph is run as its own arm (Section 5.5). The
+preliminary version’s 1584-satellite claim was, in the event, made on the torus and recovered here
+on the seam-cut graph; neither its text nor its authors knew which graph it was on.
 
-8. Conclusion
 
-     We audited a preliminary result of our own: that the transition-probability kernel of a continuous-
+
+
+                                                  28
+8. Conclusion
+
+    We audited a preliminary result of our own: that the transition-probability kernel of a continuous-
 time quantum walk outperformed the heat kernel on a 1584-satellite ISL graph and did so increas-
-ingly with scale. The result does not reproduce. Under the preliminary budget the large shells are
-a floor on which no operator learns; at the one shell where learning occurs the ranking follows the
-parameterisation and initialisation of the learned propagation time through a seed-level bimodality
-with indistinguishable escape rates; and with a budget that clears the floor, paired tests across ten
-seeds separate the two kernels in no arm-level cell after multiplicity correction, on either metric.
-The two kernels are the same kind of object, a real row-stochastic propagator with a learned reach,
-and they behave like it; what the learned reach buys is visible against fixed-reach decoupled propa-
-gation, which the better kernel in its best arm beats by 53% at 1584 satellites and 25% at 3168 on
-the hop field, and which its worst arm barely beats or does not. What the audit adds beyond the
-non-reproduction is measured: a silent budget floor that scales with the graph, a propagation-time
-parameterisation that decides rankings at small budgets, a seed-vote statistic whose noise amplitude
-is two to three seeds on these data, and a collapse rate of a tenth of long runs. Each is a reason to
-distrust a small-seed operator comparison on constellation graphs, including the one we published
-first.
+ingly with scale. Under the preliminary budget the large shells are a floor on which no operator
+learns; at the one shell where learning occurs the ranking follows the parameterisation and initialisa-
+tion of the learned propagation time through a seed-level bimodality with indistinguishable escape
+rates. With a budget that clears the floor, the picture depends on the graph and on the question
+the test can answer: on the torus, which is the graph every main-grid run was in fact made on, the
+heat kernel is better on the smallest shell on both tasks and no direction is certified on the larger
+ones, where the minimum detectable effect of a ten-seed paired test is larger than any difference
+observed; on the seam-cut graph, which both versions described, the preliminary direction at 1584
+satellites on the hop field is recovered at the corrected level, and nothing else moves. The two
+kernels are the same kind of object, a real row-stochastic propagator with a learned reach; what
+the learned reach buys against a fixed reach tuned over a ladder is 16.4% at 1584 satellites in the
+best t arm and a loss in the worst. What the audit adds beyond the correction of its own report
+is measured: a silent budget floor that scales with the graph, a propagation-time parameterisation
+that decides rankings at small budgets, a vote statistic whose noise amplitude is two to three seeds,
+a per-cell corrected test that could not have rejected in three quarters of its cells, a “reach-matched”
+baseline that reached half as far as the kernels it was matched to, a misread flag that put every
+run on a different graph from the one described, and a training dynamics chaotic enough that
+the arithmetic’s precision decides which seeds collapse. Each is a reason to distrust a small-seed
+operator comparison on constellation graphs, including the one we published first and the one we
+drafted second.
+
+Appendix A. Supplementary tables
+
+    The per-cell inference on the far-node metric (Table A.24), the pooled tests on that metric for
+both graphs (Tables A.25 and A.28), and the seam-cut grid arm by arm (Tables A.26 and A.27)
+are collected here; every number in them is produced by the same script as the tables of the main
+text.
+
+
+
+
+                                                  29
+Table A.24: Grid 2, far-node error at 1000 epochs, submitted capacity: paired inference across seeds for each arm-
+level cell, with the same columns as Table 11: mean per-seed difference eheat − ewalk on the far-node metric with its
+95% bootstrap interval, exact sign-test p, exact Wilcoxon p, and the Wilcoxon p Holm-corrected over the 24 cells
+of this table; the constant predictor for each cell is in Table 16. The pooled form of rule 6 on this metric is in
+Table A.25.
+                                                d¯ = ēheat − ēwalk           two-sided p
+                   t arm                  N     mean          95% CI           sign Wilcoxon Holm
+                   hops field
+                   relu, t0 =0.5      264     −0.0726    [−0.1156, −0.0258]   0.180     0.039   0.820
+                                     1584     −0.0120    [−0.0818, +0.0458]   1.000     1.000   1.000
+                                     3168     +0.0214    [−0.0211, +0.0631]   0.289     0.383   1.000
+                   relu, t0 =2        264     −0.0624    [−0.1052, −0.0252]   0.008     0.008   0.188
+                                     1584     +0.0660    [−0.0015, +0.1277]   0.453     0.109   1.000
+                                     3168     +0.0347    [+0.0016, +0.0873]   0.625     0.250   1.000
+                   softplus, t0 =0.5 264      −0.0103    [−0.0189, −0.0017]   0.754     0.105   1.000
+                                     1584     +0.0200    [−0.0254, +0.0574]   0.289     0.641   1.000
+                                     3168     +0.0052    [−0.0692, +0.0641]   1.000     0.812   1.000
+                   softplus, t0 =2    264     −0.0117    [−0.0214, −0.0018]   0.727     0.109   1.000
+                                     1584     +0.0377    [−0.0238, +0.0861]   0.688     0.312   1.000
+                                     3168     +0.0269    [−0.0094, +0.0637]   0.453     0.297   1.000
+                   delay field
+                   relu, t0 =0.5      264     −0.0273    [−0.0373, −0.0181]   0.016     0.016   0.359
+                                     1584     −0.0139    [−0.0290, −0.0001]   0.754     0.232   1.000
+                                     3168     +0.0141    [−0.0117, +0.0418]   1.000     0.492   1.000
+                   relu, t0 =2        264     −0.0251    [−0.0446, −0.0069]   0.289     0.109   1.000
+                                     1584     +0.0007    [−0.0037, +0.0053]   0.754     0.695   1.000
+                                     3168     +0.0178    [−0.0054, +0.0434]   1.000     0.359   1.000
+                   softplus, t0 =0.5 264      −0.0033    [−0.0076, +0.0012]   1.000     0.359   1.000
+                                     1584     −0.0081    [−0.0213, +0.0032]   0.344     0.193   1.000
+                                     3168     +0.0274    [−0.0125, +0.0813]   1.000     0.438   1.000
+                   softplus, t0 =2    264     −0.0082    [−0.0138, −0.0023]   0.109     0.037   0.816
+                                     1584     −0.0023    [−0.0102, +0.0049]   1.000     0.910   1.000
+                                     3168     −0.0011    [−0.0260, +0.0235]   1.000     1.000   1.000
+
+
+
+
+Table A.25: Grid 2, far-node error: the pooled form of rule 6, one test per (task, shell), with the columns of Table 12.
+                                      d¯ over arms                   two-sided p
+         task      N seeds         mean                 95% CI     sign Wilcoxon Holm (6) heat:walk MDE
+         hops     264      10   −0.0364   [−0.0545, −0.0184]      0.021   0.010       0.049∗        9:1   0.046
+         hops    1584      10   +0.0335   [+0.0007, +0.0667]      0.344   0.105        0.422        3:7   0.088
+         hops    3168      10   +0.0258   [+0.0015, +0.0541]      0.344   0.105        0.422        3:7   0.070
+         delay    264      10   −0.0141   [−0.0196, −0.0089]      0.002   0.002       0.012∗       10:0   0.014
+         delay   1584      10   −0.0064   [−0.0129, −0.0006]      0.754   0.131        0.422        6:4   0.016
+         delay   3168      10   +0.0094   [−0.0058, +0.0248]      0.754   0.322        0.422        4:6   0.041
+
+
+
+
+                                                             30
+Table A.26: Seam-cut graph, MAE at 1000 epochs, submitted capacity, every t arm, with the columns of Table 9.
+task, t arm      N const GCN                    heat                  walk                  leader heat:walk verdict
+hops field, softplus, t0 =0.5
+               264 0.203 0.146 ± 0.015 (7)      0.066 ± 0.006 (10) 0.073 ± 0.012 (10) heat              9:1      heat
+              1584 0.208 0.198 ± 0.012 (7)      0.113 ± 0.042 (9) 0.065 ± 0.010 (8) walk                0:8      walk
+              3168 0.185 0.180 ± 0.009 (10)     0.098 ± 0.013 (8) 0.083 ± 0.018 (7) walk                2:4      n<7
+delay field, softplus, t0 =0.5
+               264 0.179 0.135 ± 0.007 (9)      0.102 ± 0.011 (9) 0.108 ± 0.009 (9) heat                6:2      tie
+              1584 0.169 0.162 ± 0.009 (9)      0.124 ± 0.004 (10) 0.125 ± 0.008 (7) heat               5:2      tie
+              3168 0.169 0.166 ± 0.005 (7)      0.104 ± 0.010 (10) 0.123 ± 0.028 (10) heat              6:4      tie
+
+
+
+
+Table A.27: Seam-cut graph, MAE: paired inference across seeds for each arm-level cell, with the columns of Table 11;
+Holm correction over the 6 cells of this table.
+                                                d¯ = ēheat − ēwalk         two-sided p
+                  t arm                  N    mean        95% CI             sign Wilcoxon     Holm
+                  hops field
+                  softplus, t0 =0.5    264 −0.0079 [−0.0139, −0.0028] 0.021          0.004 0.023∗
+                                      1584 +0.0364 [+0.0223, +0.0523] 0.008          0.008 0.039∗
+                                      3168 +0.0135 [−0.0074, +0.0339] 0.688          0.312 0.625
+                  delay field
+                  softplus, t0 =0.5    264 −0.0056 [−0.0129, +0.0018] 0.289          0.195     0.586
+                                      1584 −0.0010 [−0.0055, +0.0039] 0.453          0.688     0.688
+                                      3168 −0.0190 [−0.0341, −0.0040] 0.754          0.084     0.336
+
+
+
+
+                        Table A.28: Seam-cut graph, far-node error: the pooled form of rule 6.
+                                      d¯ over arms                  two-sided p
+         task      N seeds       mean                95% CI    sign Wilcoxon Holm (6) heat:walk MDE
+         hops     264     10   −0.0046   [−0.0219, +0.0097]   0.754     0.695       0.938         6:4    0.041
+         hops    1584      8   +0.0427   [+0.0106, +0.0733]   0.289     0.055       0.328         2:6    0.098
+         hops    3168      6   +0.0247   [−0.0116, +0.0567]   0.688     0.312       0.938         2:4       —
+         delay    264      8   −0.0051   [−0.0154, +0.0061]   0.289     0.383       0.938         6:2    0.033
+         delay   1584      7   +0.0084   [−0.0017, +0.0182]   0.453     0.156       0.781         2:5       —
+         delay   3168     10   −0.0203   [−0.0468, +0.0046]   0.754     0.193       0.781         6:4    0.067
+
+
 
 Data and code availability
 
-    All code, the cached graph instances’ construction, every result file of the 1920 plus 720 runs, the
-scripts that produce every figure, table and number in this paper, and the dated protocol declara-
-tions are available at https://github.com/haodpsut/leo-propagation-reach. The preliminary
-version and its released artifact are available at https://github.com/haodpsut/qi-gnn-dynamic-
-wireless.
+   All code, the cached graph instances’ construction, every result file of the 2920 main-grid and 810
+auxiliary runs, the scripts that produce every figure, table and number in this paper, and the dated
+protocol declarations are available at https://github.com/haodpsut/leo-propagation-reach.
+The preliminary version and its released artifact are available at https://github.com/haodpsut/
+qi-gnn-dynamic-wireless.
 
-CRediT authorship contribution statement
+
+
+
+                                                         31
+CRediT authorship contribution statement
 
     Phuc Hao Do: Conceptualization, Methodology, Software, Investigation, Data curation, Writ-
 ing, Visualization.
@@ -1167,11 +1595,7 @@ Declaration of competing interest
 
    The author declares no competing interests.
 
-
-
-
-                                                  22
-Declaration of generative AI use
+Declaration of generative AI use
 
     During the preparation of this work the author used a large language model (Claude, Anthropic)
 to assist with code, data analysis scripts and editing of the text. After using this tool, the author
@@ -1209,7 +1633,10 @@ References
      irregular domains, IEEE Signal Processing Magazine 30 (3) (2013) 83–98. doi:10.1109/MSP.
      2012.2235192.
 
- [8] B. Chamberlain, J. Rowbottom, M. I. Gorinova, S. Webb, E. Rossi, M. M. Bronstein, Grand:
+
+
+                                                 32
+ [8] B. Chamberlain, J. Rowbottom, M. I. Gorinova, S. Webb, E. Rossi, M. M. Bronstein, Grand:
      Graph neural diffusion, arXiv preprint arXiv:2106.10934ArXiv (Cornell University) (2021).
      arXiv:2106.10934, doi:10.48550/arxiv.2106.10934.
 
@@ -1220,9 +1647,7 @@ References
      with feature dependent coins, Applied Network Science 4 (1) (2019). doi:10.1007/s41109-
      019-0188-2.
 
-
-                                                 23
-[11] G. Verdon, T. McCourt, E. Luzhnica, V. Singh, S. Leichenauer, J. D. Hidary, Quantum graph
+[11] G. Verdon, T. McCourt, E. Luzhnica, V. Singh, S. Leichenauer, J. D. Hidary, Quantum graph
      neural networks, arXiv preprint arXiv:1909.12264ArXiv (Cornell University) (2019). arXiv:
      1909.12264, doi:10.48550/arxiv.1909.12264.
 
@@ -1261,7 +1686,8 @@ References
      works meet personalized pagerank, arXiv preprint arXiv:1810.05997ArXiv (Cornell University)
      (2018). arXiv:1810.05997, doi:10.48550/arxiv.1810.05997.
 
-[21] M. Chen, Z. Wei, Z. Huang, B. Ding, Y. Li, Simple and deep graph convolutional networks,
+                                                33
+[21] M. Chen, Z. Wei, Z. Huang, B. Ding, Y. Li, Simple and deep graph convolutional networks,
      arXiv preprint arXiv:2007.02133ArXiv (Cornell University) (2020). arXiv:2007.02133, doi:
      10.48550/arxiv.2007.02133.
 
@@ -1272,8 +1698,8 @@ References
 [23] J. Topping, F. D. Giovanni, B. P. Chamberlain, X. Dong, M. M. Bronstein, Understanding
      over-squashing and bottlenecks on graphs via curvature, arXiv preprint arXiv:2111.14522ArXiv
      (Cornell University) (2021). arXiv:2111.14522, doi:10.48550/arxiv.2111.14522.
-                                                24
-[24] M. Eliasof, E. Haber, E. Treister, Pde-gcn: Novel architectures for graph neural networks
+
+[24] M. Eliasof, E. Haber, E. Treister, Pde-gcn: Novel architectures for graph neural networks
      motivated by partial differential equations, arXiv preprint arXiv:2108.01938Neural Information
      Processing Systems (2021). arXiv:2108.01938.
 
@@ -1311,8 +1737,10 @@ References
 [34] X. Bouthillier, P. Delaunay, M. Bronzi, A. Trofimov, B. Nichyporuk, J. Szeto, N. Sepah,
      E. Raff, K. Madan, V. Voleti, S. E. Kahou, V. Michalski, D. Serdyuk, T. Arbel, C. Pal,
      G. Varoquaux, P. Vincent, Accounting for variance in machine learning benchmarks, arXiv
-     preprint arXiv:2103.03098ArXiv (Cornell University) (2021). arXiv:2103.03098, doi:10.
-     48550/arxiv.2103.03098.
+
+                                                34
+    preprint arXiv:2103.03098ArXiv (Cornell University) (2021). arXiv:2103.03098, doi:10.
+    48550/arxiv.2103.03098.
 
 [35] J. Pineau, P. Vincent-Lamarre, K. Sinha, V. Larivière, A. Beygelzimer, F. d’Alché–Buc, E. B.
      Fox, H. Larochelle, Improving reproducibility in machine learning research (a report from
@@ -1323,5 +1751,8 @@ References
      arXiv:1412.6980UvA-DARE (University of Amsterdam) (2014). arXiv:1412.6980, doi:
      10.48550/arxiv.1412.6980.
 
-                                                25
+
+
+
+                                               35
 
