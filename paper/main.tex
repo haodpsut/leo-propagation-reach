@@ -16,6 +16,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{float}
 \usepackage{multirow}
 \usepackage{amsmath,amssymb}
 \usepackage[hyphens]{url}
@@ -55,23 +56,25 @@ Propagation Operators on LEO Inter-Satellite-Link Graphs}
 A preliminary version of this study reported, from \numPrelimSeeds{} seeds, that the
 transition-probability kernel of a continuous-time quantum walk, $|e^{-it\Lap}|^{2}$, outperforms
 the heat kernel $e^{-t\Lap}$ as a propagation operator on a 1584-satellite low-Earth-orbit
-inter-satellite-link graph, and read the trend across shell sizes as a ballistic mechanism emerging
-with scale. This paper is a reproducibility audit of that claim. Three operators sharing one
-eigenbasis and one network are compared on Walker-delta shells of 264 to 4400 satellites, on two
-node-field tasks, over ten seeds, across arms that vary the parameterisation and initialisation of
-the learned propagation time $t$, the capacity and the training budget, with two reach-matched
-fixed-propagation baselines, for \numGridTwelveRuns{} plus \numGridThreeRuns{} training runs. Under
-the preliminary budget, no operator improves on a constant predictor by more than
-\numGainLargeMax\% on any shell of 1584 satellites or more. With a five-fold budget every shell
-leaves the floor and the preliminary result is not reproduced: after Holm correction no arm-level
-cell separates the two kernels at the 0.05 level (\numGthreeSigHolm{} of \numGthreeArmCells{}), and
-the seed-majority verdicts the preliminary protocol would have declared move by up to
-\numSwapMaxMoved{} seeds when the metric changes. A learned $t$ beats fixed-reach propagation by
-\numFixedGapPctHopsShellOne\% at 1584 satellites in its best arm and by
-\numFixedGapWorstPctHopsShellOne\% in its worst. Long training collapses
-\numGridThreePathologyPct\% of runs to the constant solution, which is counted rather than dropped,
-and the released artifact of the preliminary version used a different configuration from its text.
-All code, results and the dated protocol are released.
+inter-satellite-link graph. This paper is a reproducibility audit of that claim. Three operators
+sharing one eigenbasis and one network are compared on Walker-delta shells of 264 to 4400
+satellites, two node-field tasks and ten seeds, across arms that vary the parameterisation and
+initialisation of the learned propagation time $t$, the capacity, the training budget and the
+link pattern of the graph, against fixed-reach baselines whose reach is measured on the graph,
+for \numTotalRuns{} plus \numRevTwoRuns{} training runs. Under the preliminary budget no operator
+improves on a constant predictor by more than \numGainLargeMax\% on any shell of 1584 satellites
+or more. With a five-fold budget every shell leaves the floor; on the torus the heat kernel is
+better on the smallest shell on both tasks (ten seeds of ten, Holm-corrected
+$p=\numPooledHopsSmallHolm$) and the paired tests certify no direction on the larger shells,
+where their minimum detectable effect exceeds the observed differences. A per-cell test over
+\numGthreeArmCells{} cells, the previous draft's headline, cannot reject in
+\numPowerCannotReject{} of them at any effect size. Against the best tuned fixed-reach baseline a
+learned $t$ is ahead by \numLadderGapBestPctHopsShellOne\% at 1584 satellites in its best arm
+and behind in its worst. On the graph with the counter-rotating seam cut, which both versions
+described and neither had run, the preliminary direction at 1584 satellites is recovered at the
+corrected level and the rest of the grid is unchanged. Which long runs collapse to the constant
+solution changes with the floating-point precision. All code, results and the dated protocol are
+released.
 \end{abstract}
 
 \begin{keyword}
@@ -119,14 +122,19 @@ implicit: the training budget relative to graph size, the parameterisation and i
 the learned propagation time $t$, the capacity, the number of seeds, and the inferential rule by
 which a winner is declared.
 
-The contribution is the audit and what it finds.
+The contribution is the audit and what it finds, and what it adds to the correction of one
+unpublished report is a method for reading such comparisons that is itself measured: the false-positive
+rate of the vote rule the preliminary protocol used, the minimum effect the paired tests can
+detect, the reach of every operator on the graph, and the sensitivity of a single run to the
+arithmetic.
 \begin{itemize}
 \item A protocol in which the operators share one eigendecomposition, one network, one parameter
-  count and one training loop; in which budget, $t$ parameterisation, $t$ initialisation and
-  capacity are arms; in which two reach-matched decoupled propagation baselines, personalised
-  PageRank and a power of the normalised adjacency, separate ``spectral operator'' from ``longer
-  reach''; and in which every reading rule, including the paired tests and the multiplicity
-  correction, is stated with its operating characteristics before a verdict is read
+  count and one training loop; in which budget, $t$ parameterisation, $t$ initialisation,
+  capacity and the link pattern of the graph are arms; in which fixed-reach decoupled propagation
+  baselines, personalised PageRank and powers of the normalised adjacency, are run over a ladder
+  whose reach is measured on the graph and bracket the learned reach of the kernels; and in
+  which every reading rule is stated with its operating characteristics, including the
+  minimum detectable effect of the corrected paired test, before a verdict is read
   (Section~\ref{sec:protocol}).
 \item Under the preliminary budget of 200 epochs, no operator improves on the constant predictor by
   more than \numGainLargeMax\% on any shell of 1584 satellites or more, in any arm, at either
@@ -134,23 +142,36 @@ The contribution is the audit and what it finds.
   tabulated. On the one shell where learning occurs the heat-versus-walk ranking changes with the
   $t$ arm, through a seed-level bimodality in which the two kernels escape the constant solution
   at indistinguishable rates (Section~\ref{sec:hidden}).
-\item With a budget of 1000 epochs every shell leaves the floor and the preliminary result is not
-  reproduced. Under paired sign and Wilcoxon tests across seeds with Holm correction, no arm-level
-  cell separates the two kernels at the 0.05 level (Section~\ref{sec:budget}); the seed-majority
-  rule the preliminary protocol used would have declared winners, and those verdicts move by up to
-  \numSwapMaxMoved{} seeds when the metric changes (Section~\ref{sec:swap}). Long training collapses
-  \numGridThreePathologyPct\% of runs to the constant solution, counted rather than dropped
+\item With a budget of 1000 epochs every shell leaves the floor. On the torus the heat kernel is
+  better on the 264-satellite shell on both tasks (ten seeds of ten, Holm-corrected
+  $p=\numPooledHopsSmallHolm$), and on the larger shells the paired tests certify no direction,
+  with a minimum detectable effect that is stated and is larger than the observed differences
+  (Section~\ref{sec:budget}). A per-cell test over \numGthreeArmCells{} arm-level cells, the
+  first draft's headline, cannot reject in \numPowerCannotReject{} of them at any effect size and
+  is reported as description. Against the best tuned fixed-reach baseline, a learned propagation
+  time in its best arm is ahead by \numLadderGapBestPctHopsShellOne\% at 1584 satellites on the
+  hop field and behind in its worst arm; the first draft's 53\% margin was measured against a
+  baseline that had half-failed to train.
+\item On the seam-cut graph, which both versions of this study said they used and neither had
+  run, the preliminary direction at 1584 satellites on the hop field is recovered at the
+  corrected level, while the other five (task, shell) pairs read as on the torus
+  (Section~\ref{sec:seam}).
+\item Long training collapses \numGridThreePathologyPct\% of runs to the constant solution,
+  counted rather than dropped, and which runs collapse depends on the floating-point precision:
+  the same seed escapes in one precision and collapses in the other
   (Section~\ref{sec:collapse}).
 \item The released artifact of the preliminary version used a network of \numPrelimParams{}
   parameters while its released code defaults to \numReleasedParams{}, with no script for the
-  experiment in question (Section~\ref{sec:threats}).
+  experiment in question; and both versions misread the generator's seam flag, so that every
+  main-grid run of this audit is on the full torus (Section~\ref{sec:threats}).
 \end{itemize}
 
 Section~\ref{sec:related} places the operators and the setting in the literature.
 Section~\ref{sec:setting} defines the graphs (Section~\ref{sec:graphs}), the operators
 (Section~\ref{sec:operators}) and the network and tasks (Section~\ref{sec:network}).
 Section~\ref{sec:protocol} states the protocol and the reading rules (Section~\ref{sec:rules}).
-Section~\ref{sec:results} reports the grids and their cost (Section~\ref{sec:cost}).
+Section~\ref{sec:results} reports the grids, the seam-cut arm (Section~\ref{sec:seam}) and
+their cost (Section~\ref{sec:cost}).
 Section~\ref{sec:discussion} interprets them, Section~\ref{sec:threats} lists what limits them, and
 Section~\ref{sec:conclusion} concludes.
 
@@ -204,8 +225,9 @@ constellations, including the Starlink shell whose geometry the 1584-satellite g
 reproduces. Learned models on this graph include the link-identified routing architecture of
 Zhang et al.~\cite{lira}, the duality-guided graph learning for joint connectivity and routing
 of Gu et al.~\cite{deepladu}, and machine-learning-driven cellular-satellite
-multi-connectivity~\cite{comsat}. None of these compares propagation operators under a common
-parameterisation of reach, which is the gap this study addresses. The tasks used here are
+multi-connectivity~\cite{comsat}. None of these compares propagation operators under one training protocol
+with the reach of every operator, learned or fixed, measured on the graph rather than asserted,
+which is the gap this study addresses. The tasks used here are
 deliberately decoupled from any particular routing or traffic-engineering system, so that the
 propagation question is isolated from questions of load.
 
@@ -230,20 +252,28 @@ learned propagation time.
 
 Each graph is a snapshot of a Walker-delta shell. Satellite positions follow circular-orbit
 propagation in an Earth-centred inertial frame; inter-satellite links follow the +Grid
-pattern~\cite{plusgrid}, two intra-plane and two inter-plane links per satellite, with
-inter-plane links suppressed above 70$^{\circ}$ latitude and across the counter-rotating seam.
-The graph is restricted to its largest connected component. Four shells are used
-(Table~\ref{tab:shells}). The 264-satellite shell is the main scale of the preliminary
+pattern~\cite{plusgrid}, two intra-plane and two inter-plane links per satellite. The generator
+suppresses inter-plane links above 70$^{\circ}$ latitude and can remove them across the
+counter-rotating seam. In every run of the two main grids the seam links are \emph{kept}, and at
+53$^{\circ}$ inclination no satellite reaches 70$^{\circ}$, so every snapshot of the main grids is
+the full 4-regular torus of $P\times S$ satellites and $2N$ links; snapshots differ only in their
+link lengths. The preliminary version and the first drafts of this paper stated that the seam was
+cut; it was not, in either, and Section~\ref{sec:threats} records how the generator's flag was
+misread. A seam-cut arm, in which the inter-plane links between the last and the first plane are
+removed so that $2S$ satellites drop to degree three and the graph is no longer vertex-transitive,
+is run at the larger budget and reported in Section~\ref{sec:seam}. The graph is restricted to its
+largest connected component. Four shells are used (Table~\ref{tab:shells}). The 264-satellite shell is the main scale of the preliminary
 version; the 1584-satellite shell reproduces the geometry of the first Starlink
 shell~\cite{starlink}, 72 planes of 22 satellites at 53$^{\circ}$ and 550~km; the 3168- and
 4400-satellite shells are scale-ups of that geometry, 72 planes of 44 and 100 planes of 44,
 and are synthetic in the sense that no operator flies them. They exist to make the diameter
 grow.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
-\caption{The four shells. All use +Grid links, a 70$^{\circ}$ polar cutoff and a seam cut. The two largest are scale-ups of the Starlink
-shell-1 geometry and are not deployed constellations.}
+\caption{The four shells. All use +Grid links; the main grids keep the seam links, so each
+snapshot is a 4-regular torus, and the seam-cut arm of Section~\ref{sec:seam} removes them. The
+two largest are scale-ups of the Starlink shell-1 geometry and are not deployed constellations.}
 \label{tab:shells}
 \input{../figures/out/tab0-shells.tex}
 \end{table}
@@ -286,7 +316,7 @@ kernels themselves. This is the ballistic-versus-diffusive distinction in its cl
 equal $t$ the walk reaches farther, and its reach grows faster with $t$. Whether that translates
 into a better propagation operator once $t$ is learned is the empirical question of this paper.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{../figures/out/fig5-spreading.pdf}
 \caption{Analytic illustration on a path of 401 nodes. Left: one row of the heat kernel and of
@@ -324,7 +354,19 @@ so that both lie in $[0,1]$ and the constant predictor has the same meaning on e
 hop field is the task of the preliminary version. Both fields in~\eqref{eq:tasks}
 require the model to move a single seeded signal across the graph, which is the propagation
 question in isolation; neither involves traffic or load. The metric is the mean absolute
-error (MAE) over nodes on held-out instances.
+error (MAE) over nodes on the evaluation instances of a seed, which are drawn from the same
+generator as its training instances with a different destination and snapshot time.
+
+One property of the torus must be stated here because it decides what the evaluation instances
+measure. A torus is vertex-transitive, so the hop field from any destination is the same field up
+to a relabelling of the nodes, and the network, whose only inputs are the destination indicator
+and the (constant) normalised degree, is equivariant to that relabelling. On the hop field the
+evaluation instances of the main grids are therefore copies of the training instances, and the
+training error equals the test error exactly (Table~\ref{tab:fit}); the hop-field task on the
+torus is a fitting problem on one field, not a generalisation problem. The delay field depends on
+the link lengths, which vary with the snapshot, and differs between instances. On the seam-cut
+graph the destination's position relative to the seam changes the hop field, and the instances
+differ on both tasks (Section~\ref{sec:seam}).
 
 % =====================================================================
 % =====================================================================
@@ -357,16 +399,22 @@ Four quantities are arms rather than fixed choices.
 \item \textbf{Capacity.} The two configurations above.
 \item \textbf{Budget.} 200 epochs, the preliminary value, held fixed across scales; and 1000
   epochs for the second grid.
+\item \textbf{Graph.} The torus of the main grids, and the seam-cut graph, run at 1000 epochs in
+  all four $t$ arms (Section~\ref{sec:seam}).
 \end{itemize}
 Grid 1 runs both capacities, all four $t$ arms, four shells, two tasks, three operators and ten
 seeds at 200 epochs (\numGridTwelveRuns{} runs). Grid 2 runs the width-32 configuration at 1000
 epochs on the three smaller shells with \numGridThreeArms{} $t$ arms (\numGridThreeRuns{} runs).
-All runs were executed on one machine, one GPU per arm, with the eigendecomposition of each
-instance cached in single precision and shared, so that every arm sees bit-identical eigenpairs;
-training already casts the eigenpairs to single precision, and on a test cell the cached and
-recomputed runs agreed to \numCacheIdenticalDigits{} significant digits.
+With the fixed-reach baselines below (\numFixedRunsTwelve{} runs at 200 epochs and
+\numFixedRunsThree{} at 1000), the two main grids comprise \numTotalRuns{} training runs; the
+baseline ladder, the seam-cut arm and the precision check of Section~\ref{sec:collapse} add
+\numLadderRuns{}, \numSeamRuns{} and \numPrecRuns{}. All runs were executed on one machine, one
+GPU per arm, with the eigendecomposition of each instance cached in single precision and shared,
+so that every arm sees bit-identical eigenpairs. Whether single precision is adequate is not
+settled by that identity; it is tested directly by rerunning one cell entirely in double precision
+(Section~\ref{sec:collapse}).
 
-\paragraph{Reach-matched decoupled baselines}
+\paragraph{Fixed-reach decoupled baselines, and their measured reach}
 A comparison of the three operators above confounds ``spectral'' with ``long-reaching'': the GCN
 step reaches one hop per layer, the spectral kernels reach as far as their learned $t$ allows.
 Two further operators, run at both budgets on the width-32 configuration, separate the two. Both
@@ -379,9 +427,38 @@ propagation~\cite{appnp}, have fixed reach and no learned $t$, and use the same 
 \label{eq:fixed}
 \end{equation}
 with $\hat{\mathbf{A}}$ the normalised adjacency of~\eqref{eq:gcn} and $\Phiop_{\mathrm{PPR}}$
-renormalised to row sums of one. Their effective reach is of the order of $1/\alpha$ and $K'$
-hops respectively, comparable to the learned reach of the spectral kernels at 1000 epochs
-(Section~\ref{sec:budget}).
+renormalised to row sums of one. The values of $\alpha$, $K$ and $K'$ in~\eqref{eq:fixed} were
+fixed by assertion in the first draft, on the reasoning that $1/\alpha$ and $K'$ hops are ``of the
+order of'' the learned reach. That reasoning confuses the support of a propagator with where its
+mass sits: on a lattice, $K'$ steps of a normalised adjacency place their mass at about
+$\sqrt{K'}$ hops, not $K'$. Reach is therefore measured, not asserted. For one row of each
+propagator, Table~\ref{tab:reach} reports the expected hop distance from the source under the
+row's probability mass, per layer at the learned $t$ of Table~\ref{tab:tlearned} for the two
+kernels and composed over the four layers. At 1584 satellites the heat kernel's layers reach
+\numReachHeatLayerOneShellOne{} to \numReachHeatMeanShellOne{} hops on average and the walk
+kernel's up to \numReachWalkLayerFourShellOne{}, while the baselines of~\eqref{eq:fixed} reach
+\numReachPprRoundOneShellOne{} (PPR) and \numReachSgcEightShellOne{} (SGC) hops per layer: the
+first-draft baselines reached about half as far as the kernels they were said to match, and the
+truncation at $K=\numPprK$ steps caps the PPR reach whatever $\alpha$ says. The comparison is
+therefore run over a ladder that brackets the learned reach on every shell: SGC with
+$K'\in\{2,8,32,64\}$ and PPR computed exactly, $\alpha(\mathbf{I}-(1-\alpha)\hat{\mathbf{A}})^{-1}$,
+with $\alpha\in\{0.2,0.05,0.02,0.01\}$, whose per-layer reach runs from 1.3 to
+\numReachPprExactOneDouble{} hops (Table~\ref{tab:reach}). Every rung is run at 1000 epochs, three
+shells, both tasks, ten seeds (\numLadderRuns{} runs), and the best rung per (task, shell) is the
+baseline the spectral kernels are compared with in Section~\ref{sec:budget}; the first-draft
+values are kept in the ladder and in Table~\ref{tab:fixed} so that their result remains
+checkable.
+
+\begin{table}[htbp]
+\centering
+\caption{Measured reach: expected hop distance from the source under one row of each propagator,
+on the torus of each shell. For the two kernels the reach is evaluated at the learned $t$ of
+Table~\ref{tab:tlearned}, layer by layer and composed over the four layers; for the fixed-reach
+operators it is a property of $\alpha$ or $K'$ alone. The first-draft baselines
+of~\eqref{eq:fixed} are the rows marked round 1.}
+\label{tab:reach}
+\input{../figures/out/tab-reach.tex}
+\end{table}
 
 \subsection{Reading rules, declared before the runs, with their operating characteristics}
 \label{sec:rules}
@@ -389,11 +466,13 @@ hops respectively, comparable to the learned reach of the spectral kernels at 10
 Six rules govern how a cell, one (task, shell, arm) combination, is read. The first five were
 fixed before the first grid was launched, and two of them were tightened after the first runs
 exposed a gap; both changes are dated in the repository and stated here. The sixth was added
-after external review of a draft showed that the fifth, as stated, had a false-positive rate the
-draft never computed.
+after external review of a draft showed that the fourth, as stated, had a false-positive rate the
+draft never computed, and its unit of inference was changed after a second review showed that
+the first form of the rule had, by construction, almost no power; both forms are reported.
 \begin{enumerate}
-\item \textbf{Constant baseline.} Every cell reports the MAE of the predictor that outputs the
-  mean of the target. Whether an operator beats it is a result, never a filter.
+\item \textbf{Constant baseline.} Every cell reports, on every metric it is scored on, the error
+  of the predictor that outputs the mean of the target, in the tables themselves. Whether an
+  operator beats it is a result, never a filter.
 \item \textbf{Pathology.} A run is excluded only for a training pathology: a non-finite loss, or
   a loss that rises by more than 1\% between successive thirds of training. Excluded runs are
   counted next to every number they affect, and Section~\ref{sec:collapse} reports whether each
@@ -433,20 +512,59 @@ draft never computed.
 \item \textbf{Robustness.} A ranking at a (task, shell) is claimed only if it is the same in
   every $t$ arm run at that budget. Grid 2 runs \numGridThreeArms{} arms, and the number is
   stated wherever the rule is applied.
-\item \textbf{Inference.} For every cell, the paired per-seed differences
-  $d_{s}=e_{\mathrm{heat},s}-e_{\mathrm{walk},s}$ are summarised by their mean with a 95\%
-  bootstrap confidence interval, by the exact two-sided sign test, and by the exact two-sided
-  Wilcoxon signed-rank test, and the Wilcoxon $p$-values are Holm-corrected over the
-  \numGthreeArmCells{} arm-level cells of the same metric. A difference between the two kernels is
-  claimed only where the corrected $p$ is below 0.05. The tests were checked against an
-  independent implementation on random data and agree to nine decimal places.
+\item \textbf{Inference.} The unit of inference is the (task, shell) pair, of which there are
+  six at the larger budget. For each seed $s$, the per-seed difference
+  $d_{s}=e_{\mathrm{heat},s}-e_{\mathrm{walk},s}$ is averaged over the $t$ arms in which seed $s$
+  is valid for both kernels, giving one paired difference per seed; the ten values are summarised
+  by their mean with a 95\% bootstrap confidence interval, by the exact two-sided sign test and by
+  the exact two-sided Wilcoxon signed-rank test, and the Wilcoxon $p$-values are Holm-corrected
+  over the six pairs of the same metric. A difference between the two kernels is claimed at a
+  (task, shell) only where the corrected $p$ is below 0.05. The same statistics are also reported
+  for every arm-level cell, with Holm correction over the \numGthreeArmCells{} cells, as the
+  first draft did; these per-cell tests are descriptive, for the reason given next. The tests were
+  checked against an independent implementation on random data and agree to nine decimal places.
 \end{enumerate}
+
+\paragraph{Operating characteristics of rule~6}
+The exact Wilcoxon test on $n$ non-zero pairs cannot return a two-sided $p$ below $2/2^{n}$, and
+Holm over $m$ tests requires the smallest $p$ to fall below $0.05/m$. Table~\ref{tab:power} applies
+this to the arm-level cells of grid~2: with $m=\numGthreeArmCells$ the threshold is
+$\numHolmThreshold$, which $n=9$ pairs cannot reach ($2/2^{9}=\numPowerMinPNine$) and $n=10$ pairs
+reach only on a unanimous $10{:}0$ split ($\numPowerMinPTen$). Of the \numGthreeArmCells{} cells,
+\numPowerCannotReject{} have nine or fewer valid pairs after exclusions and cannot reject at any
+effect size, and the remaining \numPowerNeedSweep{} require every seed to agree. A ``0 of
+\numGthreeArmCells{}'' under that rule is close to a property of the design, which is why the
+first draft's headline, which reported exactly that, was withdrawn. The table also gives, for
+each $|S|$, the minimum detectable effect (MDE) at the uncorrected 0.05 level and 80\% power,
+computed by simulation from each cell's own seed dispersion. Pooling over arms gives every
+(task, shell) pair its full ten seeds and reduces $m$ to 6, so the threshold becomes
+$\numPooledThreshold$ and a $10{:}0$ or a favourable $9{:}1$ split can reject. The MDE of the
+pooled test at the corrected level is reported beside every pooled result
+(Table~\ref{tab:pooled}); it is what the design can resolve, and where the observed difference is
+smaller than it the correct statement is that the design cannot certify a difference, not that
+none exists. Dependence among the tests is stated rather than assumed away: the four arms at a
+(task, shell) share instances, seeds and eigenbases, which is why they are pooled into one test,
+and the two tasks of a shell share graphs and seeds, so the six pooled tests are not independent.
+Holm's procedure controls the family-wise error rate under arbitrary dependence, so the correction
+remains valid; it is conservative, not invalid, under this structure.
+
+\begin{table}[htbp]
+\centering
+\caption{Operating characteristics of the per-cell form of rule~6 on grid~2, MAE. For each
+number of valid seed pairs $|S|$: the smallest two-sided $p$ the exact Wilcoxon test can return,
+that value times the \numGthreeArmCells{} cells of the Holm family, whether any outcome can
+survive the correction, how many cells have that $|S|$, and the median over those cells of the
+minimum detectable effect at $\alpha=0.05$ (uncorrected) and 80\% power, in MAE units, from each
+cell's own seed dispersion.}
+\label{tab:power}
+\input{../figures/out/tab-power.tex}
+\end{table}
 All six rules are implemented once, in the analysis script that produces every table and figure,
 and the same script prints the pathology and plateau counts beside every mean.
 Figure~\ref{fig:protocol} summarises the design, and Table~\ref{tab:summary} collects the headline
 numbers with the section that derives each.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \input{../figures/out/fig-protocol.tex}
 \caption{The study design. Every cell of the grid, one (task, shell, arm), runs the operators on
@@ -455,7 +573,7 @@ verdict (rule~4) is reported beside the paired tests of rule~6, never instead of
 \label{fig:protocol}
 \end{figure}
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Headline numbers and where each is derived. Every value is generated from the result
 files by the same script that produces the figures.}
@@ -489,7 +607,7 @@ single-run gain among them is \numAboveMaxGainPct\%. Of \numGridTwelveRuns{} run
 \numGridTwelvePathology{} were excluded as pathologies and \numGridTwelvePlateau{} were plateaus in
 the sense of rule~2, kept.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{../figures/out/fig1-floor.pdf}
 \caption{Gain~\eqref{eq:gain} of the best operator over the constant predictor at 200 epochs,
@@ -499,7 +617,7 @@ rule~3. Above 264 satellites every combination lies below it on both tasks.}
 \label{fig:floor}
 \end{figure}
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Gain (\%) of the best operator over the constant predictor at 200 epochs, ten seeds
 per cell, both tasks. A dagger marks cells below the 5\% floor, where the operator ranking is
@@ -508,7 +626,7 @@ not read.}
 \input{../figures/out/tab1-floor.tex}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Large-shell runs at 200 epochs whose error is more than 2\% below the constant
 predictor, by capacity, operator and shell.}
@@ -537,7 +655,7 @@ either capacity, and no cell reaches $p<0.05$ on the sign test. The same operato
 instances rank differently depending only on the $t$ arm, and none of the rankings is
 distinguishable from noise.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{../figures/out/fig2-s264-arms.pdf}
 \caption{Per-seed MAE on the hop field, 264 satellites, submitted capacity, 200 epochs, for
@@ -547,7 +665,7 @@ or stays near it.}
 \label{fig:arms}
 \end{figure}
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Hop field, 264 satellites, 200 epochs: MAE over valid seeds (mean $\pm$ sd for the two
 spectral operators, mean for the GCN, valid-seed count in parentheses; the GCN's sd is
@@ -570,7 +688,7 @@ Figure~\ref{fig:tlearned} shows the learned $t_{\ell}$ per layer at this budget:
 learns a larger $t$ than the later ones for both operators, and the values do not grow with the
 shell, consistent with the models on large shells not having moved from the constant solution.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Seeds that escaped the constant solution (MAE below 90\% of the constant predictor)
 out of valid seeds, hop field, 264 satellites, 200 epochs.}
@@ -578,7 +696,7 @@ out of valid seeds, hop field, 264 satellites, 200 epochs.}
 \input{../figures/out/tab4-escape.tex}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{../figures/out/fig3-t-learned.pdf}
 \caption{Learned propagation time per layer (lighter to darker: first to fourth layer) against
@@ -587,14 +705,18 @@ Left: 200 epochs (grid 1). Right: 1000 epochs (grid 2). Note the different verti
 \label{fig:tlearned}
 \end{figure}
 
-\subsection{With enough budget, the two kernels are not distinguishable}
+\subsection{With enough budget, the heat kernel leads on the smallest shell and neither kernel is resolved on the larger ones}
 \label{sec:budget}
 
 Grid 2 raises the budget to 1000 epochs at the submitted capacity on the three smaller shells,
-with \numGridThreeArms{} $t$ arms. Every cell leaves the floor: on the hop field the best
+with \numGridThreeArms{} $t$ arms. Every cell leaves the floor on both metrics: on MAE the best
 operator improves on the constant predictor by \numGthreeHopsGainMin\% to \numGthreeHopsGainMax\%
-depending on shell and arm, and on the delay field by \numGthreeDelayGainMin\% to
-\numGthreeDelayGainMax\% (Table~\ref{tab:grid3}). The floor of Section~\ref{sec:floor} was a
+on the hop field and by \numGthreeDelayGainMin\% to \numGthreeDelayGainMax\% on the delay field,
+depending on shell and arm (Table~\ref{tab:grid3}), and on the far-node metric, against the
+constant predictor's own far-node error (\numConstAurcHopsShellOne{} at 1584 satellites on the hop
+field, against \numConstMaeHopsShellOne{} on MAE), by \numAurcGainLargeMin\% to
+\numAurcGainLargeMax\% on the two large shells (Table~\ref{tab:aurc}); \numAurcFloorCells{} of the
+\numGthreeArmCells{} far-node cells are at the floor. The floor of Section~\ref{sec:floor} was a
 budget floor. Table~\ref{tab:tlearned} and the right panel of Figure~\ref{fig:tlearned} show what
 the budget buys: the heat kernel's first-layer $t$ grows with the shell, from
 \numTlayerOneSmallHeat{} at 264 satellites to \numTlayerOneShellOneHeat{} at 1584 and
@@ -602,7 +724,7 @@ the budget buys: the heat kernel's first-layer $t$ grows with the shell, from
 \numTlayerOneSmallWalk{} and \numTlayerOneDoubleWalk{}. The diffusive operator reaches farther on
 larger graphs by learning to.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{../figures/out/fig4-scale-1000ep.pdf}
 \caption{MAE against shell size at 1000 epochs, submitted capacity, the two $t_{0}=0.5$ arms,
@@ -613,17 +735,17 @@ offset horizontally within each shell for legibility.}
 \end{figure}
 
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
-\caption{Grid 2, MAE at 1000 epochs, submitted capacity: mean $\pm$ sd over valid seeds with
-the count in parentheses, the operator leading in mean, the number of seeds on which each
-spectral operator is lower, and the majority verdict of rule~4. ``n$<$7'' marks a cell with
-too few valid seed pairs for that rule.}
+\caption{Grid 2, MAE at 1000 epochs, submitted capacity: the constant predictor's MAE, then
+mean $\pm$ sd over valid seeds with the count in parentheses for each operator, the operator
+leading in mean, the number of seeds on which each spectral operator is lower, and the majority
+verdict of rule~4. ``n$<$7'' marks a cell with too few valid seed pairs for that rule.}
 \label{tab:grid3}
 \input{../figures/out/tab2-grid3.tex}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Learned propagation time per layer at 1000 epochs, hop field, submitted capacity,
 softplus arm with $t_{0}=0.5$, mean over valid seeds.}
@@ -631,86 +753,156 @@ softplus arm with $t_{0}=0.5$, mean over valid seeds.}
 \input{../figures/out/tab7-tlearned.tex}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Grid 2, MAE: paired inference across seeds for each arm-level cell, 1000 epochs,
-submitted capacity. $\bar d$ is the mean over valid seed pairs of the per-seed difference
-$e_{\mathrm{heat}}-e_{\mathrm{walk}}$, negative favouring the heat kernel, with its 95\% bootstrap
-interval; the three $p$-values are the exact two-sided sign test, the exact two-sided Wilcoxon
-signed-rank test, and the Wilcoxon $p$ Holm-corrected over the \numGthreeArmCells{} cells of this
-table. No Holm-corrected $p$ is below 0.05.}
+submitted capacity (the descriptive, per-cell form of rule~6). $\bar d$ is the mean over valid
+seed pairs of the per-seed difference $e_{\mathrm{heat}}-e_{\mathrm{walk}}$, negative favouring
+the heat kernel, with its 95\% bootstrap interval; the three $p$-values are the exact two-sided
+sign test, the exact two-sided Wilcoxon signed-rank test, and the Wilcoxon $p$ Holm-corrected
+over the \numGthreeArmCells{} cells of this table. Table~\ref{tab:power} shows that
+\numPowerCannotReject{} of these cells cannot reach a corrected $p$ below 0.05 at any effect
+size; the constant predictor for each cell is in Table~\ref{tab:grid3}.}
 \label{tab:grid3inf}
 \input{../figures/out/tab2b-grid3-inference.tex}
 \end{table}
 
+\begin{table}[htbp]
+\centering
+\caption{Grid 2, MAE: the pooled form of rule~6, one test per (task, shell). For each seed the
+difference $e_{\mathrm{heat}}-e_{\mathrm{walk}}$ is averaged over the $t$ arms in which that seed
+is valid for both kernels; the columns give the mean of the ten per-seed values with its 95\%
+bootstrap interval, the exact sign-test and Wilcoxon $p$, the Wilcoxon $p$ Holm-corrected over
+the six rows, the seed vote, and the minimum detectable effect of this test at the corrected
+level ($0.05/6$) and 80\% power from the row's own seed dispersion, in MAE units. An asterisk
+marks a corrected $p$ below 0.05.}
+\label{tab:pooled}
+\input{../figures/out/tab-pooled.tex}
+\end{table}
 
-Figure~\ref{fig:scale} and Tables~\ref{tab:grid3} and~\ref{tab:grid3inf} give the comparison.
-Read by the majority rule~\eqref{eq:win} of the preliminary protocol, the heat kernel wins in every arm at
-\numGthreeHeatRobust{} of \numGthreeCells{} task-scale cells and the walk kernel at
-\numGthreeWalkRobust{}. Read by mean, the heat kernel leads in \numGthreeLeadHeat{} and the walk
-kernel in \numGthreeLeadWalk{} of the \numGthreeArmCells{} arm-level cells, \numGthreeWalkLeadTie{}
-of the walk leads being recorded as ties by the majority rule. Read by inference, which is the
-reading this paper stands on, \numGthreeSigRaw{} of \numGthreeArmCells{} cells reach $p<0.05$ on
-the Wilcoxon test before correction and \numGthreeSigHolm{} after Holm correction; the sign-test
-$p$ behind the heat majorities that survive rule~5 ranges from \numGthreeRobustMinPsign{} to
-\numGthreeRobustMaxPsign{}. No difference between the two kernels is claimed at any scale. The
-ratio of the walk kernel's seed standard deviation to the heat kernel's has median
-\numSdRatioMedian{} over the \numSdRatioCells{} cells, exceeds 3 in \numSdRatioGeThree{} and is
-below 1 in \numSdRatioLtOne{}; at ten seeds the relative standard error of a standard deviation is
-about 24\%, so no statement about relative variance is made either. The preliminary version's
-finding, a walk-kernel error of \numPrelimWalkMAE{} against \numPrelimHeatMAE{} at 1584 satellites,
-is not reproduced: under the same parameterisation and capacity, with ten seeds instead of
-\numPrelimSeeds{}, the two kernels are indistinguishable at that scale on both tasks.
+
+Figure~\ref{fig:scale} and Tables~\ref{tab:grid3} to~\ref{tab:pooled} give the comparison.
+Read by the pooled test of rule~6 (Table~\ref{tab:pooled}), which is the reading this paper
+stands on, the heat kernel is better on the 264-satellite shell on both tasks: all ten seeds
+favour it on the hop field ($\bar d=\numPooledHopsSmallD$, Holm-corrected
+$p=\numPooledHopsSmallHolm$) and on the delay field ($\bar d=\numPooledDelaySmallD$,
+$p=\numPooledDelaySmallHolm$). On the two larger shells no direction is certified: the seed votes
+are \numPooledHopsShellOneWins{} and \numPooledHopsDoubleWins{} on the hop field and
+\numPooledDelayShellOneWins{} and \numPooledDelayDoubleWins{} on the delay field, the last two
+in opposite directions, with corrected $p$ of \numPooledHopsShellOneHolm{},
+\numPooledHopsDoubleHolm{}, \numPooledDelayShellOneHolm{} and \numPooledDelayDoubleHolm{}. The
+minimum detectable effect of these four tests is between \numPooledMdeLargeMin{} and
+\numPooledMdeMax{} in MAE units, against constant-predictor errors near 0.2; at 1584 satellites on
+the hop field, where the preliminary claim was made, the design resolves a difference of
+\numPooledHopsShellOneMde{} and the observed difference is \numPooledHopsShellOneD{}. The
+per-cell statistics (Table~\ref{tab:grid3inf}) describe the same picture: \numCIExclZero{} of the
+\numGthreeArmCells{} bootstrap intervals exclude zero, \numCIExclZeroHeat{} of them favouring the
+heat kernel and \numCIExclZeroWalk{} the walk kernel, against \numCIExpectedNull{} expected under
+a null at 95\% coverage, and \numCIExclZeroSmall{} of the \numCIExclZero{} are on the 264-satellite
+shell; all \numGthreeSigRaw{} cells with uncorrected Wilcoxon $p<0.05$ favour the heat kernel;
+and \numGthreeSigHolm{} cells survive the per-cell Holm correction, which Table~\ref{tab:power}
+shows \numPowerCannotReject{} of them could not have done at any effect size. Read by the
+majority rule~\eqref{eq:win} of the preliminary protocol, the heat kernel wins in every arm at
+\numGthreeHeatRobust{} of \numGthreeCells{} task-scale cells, both of them the 264-satellite
+shell, and the walk kernel at \numGthreeWalkRobust{}; by mean the heat kernel leads in
+\numGthreeLeadHeat{} and the walk kernel in \numGthreeLeadWalk{} of the \numGthreeArmCells{}
+arm-level cells. The ratio of the walk kernel's seed standard deviation to the heat kernel's has
+median \numSdRatioMedian{} over the \numSdRatioCells{} cells, exceeds 3 in \numSdRatioGeThree{}
+and is below 1 in \numSdRatioLtOne{}; at ten seeds the relative standard error of a standard
+deviation is about 24\%, so no statement about relative variance is made. The preliminary
+version's finding, a walk-kernel error of \numPrelimWalkMAE{} against \numPrelimHeatMAE{} at 1584
+satellites, is not reproduced on the torus: under the same parameterisation and capacity, with
+ten seeds instead of \numPrelimSeeds{}, the seed vote at that scale is
+\numPooledHopsShellOneWins{} and the only certified direction in the grid, on the smallest shell,
+is the opposite one. Whether it reproduces on the seam-cut graph is the question of
+Section~\ref{sec:seam}.
 
 The local GCN operator is the worst everywhere, as expected for a four-hop model on graphs whose
 eccentricity is tens of hops; on the hop field it clears the 5\% floor only on the 264-satellite
 shell (gain \numGthreeGcnGainSmall\%, against \numGthreeGcnGainShellOne\% at 1584 and
 \numGthreeGcnGainDouble\% at 3168). Table~\ref{tab:fit} places training error beside test error
-for each operator, as a reference for what each model achieves on the instances it was fitted
-to: the spectral kernels fit their training instances to errors well below their test errors on
-the small shell and closer to them on the large shells, and the GCN fits neither.
+for each operator. On the hop field the two are equal to five decimals in every cell (largest
+difference \numFitMaxGapHops), and on the delay field they differ by at most \numFitMaxGap{}: this
+is the vertex-transitivity of Section~\ref{sec:network} made visible. No model overfits, every
+model underfits, and on the torus the evaluation instances carry no generalisation information
+that the training instances do not; the errors of this grid measure how well each operator fits
+one field, and the comparison between operators is unaffected because all are fitted to the
+same one. On the seam-cut graph, where the instances differ, training and test error separate
+by up to \numSeamFitMaxGap{} (Section~\ref{sec:seam}).
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Training and test MAE at 1000 epochs, submitted capacity, softplus arm with
-$t_{0}=0.5$, mean over valid seeds. The training column is the error on the eight instances each
-model was fitted to and serves as the achievable-error reference for that model.}
+$t_{0}=0.5$, mean over valid seeds, on the torus. The training column is the error on the eight
+instances each model was fitted to. On the hop field the evaluation instances are copies of the
+training instances up to relabelling, and the two columns coincide.}
 \label{tab:fit}
 \input{../figures/out/tab-fit.tex}
 \end{table}
 
-\IfFileExists{../figures/out/tab-fixed.tex}{%
-\paragraph{Reach-matched baselines}
-Table~\ref{tab:fixed} reports the two decoupled operators of~\eqref{eq:fixed} beside the better
-of the two spectral kernels in each cell. They carry no learned $t$ and reach a fixed number of
-hops, so a spectral kernel that beats them does so by something other than reach alone. At 200
-epochs the fixed-reach operators sit on the same floor as everything else on the large shells,
-gaining at most \numFixedLargeMaxGainPct\% over the constant predictor there. At 1000 epochs the
-comparison separates: on the 264-satellite hop field the better fixed-reach operator reaches
-\numFixedBestHopsSmall{} against \numSpecBestHopsSmall{} for the better spectral kernel, a gap of
-\numFixedGapPctHopsSmall\%, but at 1584 satellites it reaches \numFixedBestHopsShellOne{} against
-\numSpecBestHopsShellOne{} (\numFixedGapPctHopsShellOne\%) and at 3168 satellites
-\numFixedBestHopsDouble{} against \numSpecBestHopsDouble{} (\numFixedGapPctHopsDouble\%); on the
-delay field the gaps are \numFixedGapPctDelaySmall\%, \numFixedGapPctDelayShellOne\% and
-\numFixedGapPctDelayDouble\%. In the worst $t$ arm, however, the margin shrinks to
-\numFixedGapWorstPctHopsShellOne\% at 1584 and \numFixedGapWorstPctHopsDouble\% at 3168 satellites,
-and both kernels beat both baselines in every arm in only \numBothBeatFixedCells{} of the six
-task-scale cells. A learned propagation time can therefore earn its cost on the larger graphs,
-where a fixed reach of $1/\alpha$ or $K'$ hops is short of the eccentricity, but whether it does
-depends on how $t$ is parameterised and initialised, which is the paper's second finding seen
-from the other side. What survives is a statement about the family under a good $t$ arm, not
-about which member of the family is used.
+\paragraph{Fixed-reach baselines}
+Table~\ref{tab:fixed} reports the two first-draft operators of~\eqref{eq:fixed}, with the constant
+predictor beside them, and Table~\ref{tab:ladder} the full ladder at 1000 epochs. The fixed-reach
+operators carry no learned $t$, so a spectral kernel that beats the best of them does so by
+something other than reach alone. At 200 epochs they sit on the same floor as everything else on
+the large shells, gaining at most \numFixedLargeMaxGainPct\% over the constant predictor there. At
+1000 epochs the first-draft operators, whose measured reach is \numReachPprRoundOneShellOne{} to
+\numReachSgcEightShellOne{} hops per layer, gain \numFixedGainPprHopsSmall\% (PPR) and
+\numFixedGainSgcHopsSmall\% (SGC) over the constant predictor on the 264-satellite hop field,
+\numFixedGainPprHopsShellOne\% and \numFixedGainSgcHopsShellOne\% at 1584 satellites and
+\numFixedGainPprHopsDouble\% and \numFixedGainSgcHopsDouble\% at 3168. The 1584-satellite cell
+is not explained by reach, since the 3168-satellite shell has the larger eccentricity and the
+same operators do better there; it is the seed bimodality of Section~\ref{sec:hidden} again.
+Of the \numFixedSgcHopsShellOneN{} valid SGC seeds in that cell, \numFixedSgcHopsShellOneAtConst{}
+sit on the constant solution and \numFixedSgcHopsShellOneEscaped{} escaped it, which is what the
+standard deviation of \numFixedSgcHopsShellOneSd{}, the largest in the grid, records; the PPR
+cell splits \numFixedPprHopsShellOneAtConst{} to \numFixedPprHopsShellOneEscaped{}. A margin
+measured against that cell, as the first draft's \numFixedGapPctHopsShellOne\% was, is a margin
+over a baseline that half-failed to train, and it is withdrawn.
 
-\begin{table}[t]
+The ladder replaces it. Its best rung per (task, shell), chosen on the same ten seeds the kernels
+are scored on and therefore favourable to the baselines, is \numLadderBestNameHopsSmall{} at 264
+satellites on the hop field, \numLadderBestNameHopsShellOne{} at 1584 and
+\numLadderBestNameHopsDouble{} at 3168, with errors \numLadderBestHopsSmall{},
+\numLadderBestHopsShellOne{} and \numLadderBestHopsDouble{}; on the delay field
+\numLadderBestNameDelaySmall{}, \numLadderBestNameDelayShellOne{} and
+\numLadderBestNameDelayDouble{}. Against these, the better spectral kernel in its best $t$ arm
+is ahead in all \numSpecBestBeatsLadderCells{} task-scale cells, by \numLadderGapBestPctHopsSmall\%,
+\numLadderGapBestPctHopsShellOne\% and \numLadderGapBestPctHopsDouble\% on the hop field and
+\numLadderGapBestPctDelaySmall\%, \numLadderGapBestPctDelayShellOne\% and
+\numLadderGapBestPctDelayDouble\% on the delay field; in its worst $t$ arm it is behind the best
+rung in every cell but one (\numLadderGapWorstPctHopsShellOne\% at 1584 and
+\numLadderGapWorstPctHopsDouble\% at 3168 satellites on the hop field, a negative margin being a
+loss), and both kernels beat the best rung in every arm in \numBothBeatLadderCells{} of the six
+cells. The ladder has its own floor: SGC at $K'=64$, whose per-layer reach of
+\numReachSgcSixtyFourSmall{} hops on the 264-satellite shell is a third of the eccentricity,
+returns the constant predictor's error on both tasks there, the over-smoothing that a fixed reach
+beyond the field's scale produces. What a learned propagation time buys is therefore a margin of
+one to sixteen percent over a tuned fixed reach when its parameterisation and initialisation are
+right, and a loss to it when they are not; the first draft's ``53\%'' was the untuned baseline's
+failure, not the kernel's success.
+
+\begin{table}[htbp]
 \centering
-\caption{Reach-matched decoupled baselines: MAE (mean $\pm$ sd over valid seeds; at 200 epochs all
-ten seeds are valid, at 1000 epochs the count is in parentheses) of personalised-PageRank propagation and of the $K'$-th power of the normalised
-adjacency, at 200 and 1000 epochs, submitted capacity, beside the lower of the two spectral
-kernels' means at 1000 epochs.}
+\caption{The first-draft fixed-reach baselines of~\eqref{eq:fixed}: the constant predictor's
+MAE and the MAE of personalised-PageRank propagation ($\alpha=\numPprAlpha$, $K=\numPprK$ steps)
+and of the $K'=\numSgcK$ power of the normalised adjacency, mean $\pm$ sd over valid seeds (at
+200 epochs all ten seeds are valid; at 1000 epochs the count is in parentheses), submitted
+capacity, beside the lower of the two spectral kernels' means at 1000 epochs.}
 \label{tab:fixed}
 \input{../figures/out/tab-fixed.tex}
 \end{table}
-}{}
+
+\begin{table}[htbp]
+\centering
+\caption{The baseline ladder at 1000 epochs, submitted capacity: MAE (mean over valid seeds,
+count in parentheses) of SGC at four powers and of exact personalised PageRank at four
+restart probabilities, whose measured reach is in Table~\ref{tab:reach}; the best rung per row,
+which includes the first-draft baselines of Table~\ref{tab:fixed} in the competition; and the
+lower of the two spectral kernels' means in its worst and its best $t$ arm.}
+\label{tab:ladder}
+\input{../figures/out/tab-ladder.tex}
+\end{table}
 
 \subsection{The majority verdict moves with the metric}
 \label{sec:swap}
@@ -721,30 +913,23 @@ show most clearly. Formally, with $h(i,d)$ the hop distance of node $i$ from the
 $\epsilon$ the destination's eccentricity, the far-node error is the mean absolute error over
 $\{i : h(i,d) > \epsilon/2\}$; it is in the same normalised units as the MAE and is larger because
 the far nodes are the hard ones. Table~\ref{tab:aurc} reports it for grid 2 under the same rules,
-with paired inference in Table~\ref{tab:aurcinf}, and Table~\ref{tab:swap} sets the seed votes on
-the two metrics side by side for every cell.
+with paired inference in Tables~\ref{tab:aurcinf} and~\ref{tab:pooledaurc}
+(Appendix~\ref{app:tables}), and Table~\ref{tab:swap} sets the seed votes on the two metrics side
+by side for every cell.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
-\caption{Grid 2, far-node error at 1000 epochs, submitted capacity: mean $\pm$ sd over valid
-seeds with the count in parentheses, the operator leading in mean, the seed votes, and the
-majority verdict of rule~4 applied to this metric.}
+\caption{Grid 2, far-node error at 1000 epochs, submitted capacity: the constant predictor's
+far-node error, then mean $\pm$ sd over valid seeds with the count in parentheses for each
+operator, the operator leading in mean, the seed votes, and the majority verdict of rule~4
+applied to this metric with the floor of rule~3 computed against the far-node constant.}
 \label{tab:aurc}
 \input{../figures/out/tab5-aurc.tex}
 \end{table}
 
-\begin{table}[t]
-\centering
-\caption{Grid 2, far-node error at 1000 epochs, submitted capacity: paired inference across
-seeds for each arm-level cell, with the same columns as Table~\ref{tab:grid3inf}: mean per-seed
-difference $e_{\mathrm{heat}}-e_{\mathrm{walk}}$ on the far-node metric with its 95\% bootstrap
-interval, exact sign-test $p$, exact Wilcoxon $p$, and the Wilcoxon $p$ Holm-corrected over the
-\numGthreeArmCells{} cells of this table. No cell reaches a corrected $p$ below 0.05.}
-\label{tab:aurcinf}
-\input{../figures/out/tab5b-aurc-inference.tex}
-\end{table}
 
-\begin{table}[t]
+
+\begin{table}[htbp]
 \centering
 \caption{The same runs scored on two metrics. For each arm-level cell, the seed votes
 heat:walk on MAE and on far-node error, how many votes moved, and the majority verdicts on the
@@ -753,15 +938,82 @@ two metrics.}
 \input{../figures/out/tab-swap.tex}
 \end{table}
 
-On the far-node metric the heat kernel wins in every arm at \numAurcHeatRobust{} of
-\numGthreeCells{} task-scale cells, against \numGthreeHeatRobust{} on MAE; \numAurcSigRaw{} cells
-reach $p<0.05$ before correction and \numAurcSigHolm{} after. The same runs, scored on the two
-metrics, move the seed vote by a median of \numSwapMedianMoved{} and up to \numSwapMaxMoved{}
-seeds, and by two or more in \numSwapCellsMovedTwoPlus{} of \numSwapCells{} cells. That is the
+On the far-node metric the pooled test certifies the same two cells as on MAE, the heat kernel
+on the 264-satellite shell on both tasks (\numPooledSigHolmAurc{} of 6 after Holm), and no
+direction on the larger shells; \numCIExclZeroAurc{} per-cell intervals exclude zero,
+\numCIExclZeroHeatAurc{} favouring the heat kernel. Under the majority rule the heat kernel wins
+in every arm at \numAurcHeatRobust{} of \numGthreeCells{} task-scale cells, against
+\numGthreeHeatRobust{} on MAE; \numAurcSigRaw{} cells reach $p<0.05$ before per-cell correction
+and \numAurcSigHolm{} after. The same runs, scored on the two metrics, move the seed vote by a
+median of \numSwapMedianMoved{} and up to \numSwapMaxMoved{} seeds, and by two or more in
+\numSwapCellsMovedTwoPlus{} of \numSwapCells{} cells. That is the
 noise amplitude of the majority statistic, measured on the data themselves, and it is the size of
 the margins by which the majority verdicts of Tables~\ref{tab:s264} and~\ref{tab:grid3} were
 declared. On the metric chosen to favour reach, the operator built for reach does not win; but
 neither, under inference, does the other.
+
+\subsection{The seam-cut graph}
+\label{sec:seam}
+
+Every run above is on the torus. The seam-cut graph removes the inter-plane links between the
+last and the first plane, so that $2S$ satellites have degree three, the graph is no longer
+vertex-transitive, and a destination's hop field depends on where it sits relative to the seam.
+It is the graph both versions of this study said they used. Grid~2 is repeated on it at 1000
+epochs, submitted capacity, in \numSeamArms{} $t$ arms with the three operators
+(\numSeamCoreRuns{} runs, of which \numSeamPathology{}, \numSeamPathologyPct\%, are excluded under
+rule~2) and with the first-draft fixed-reach baselines (\numSeamFixedRuns{} runs), and read by the
+same six rules. Table~\ref{tab:seam} sets the softplus, $t_{0}=0.5$ arm on the two graphs side by
+side; Tables~\ref{tab:seamgrid} and~\ref{tab:seampooled} give every arm and the pooled test.
+
+Two things change and one does not. First, the instances now differ: training and test error
+separate by up to \numSeamFitMaxGap{}, and the GCN's seed dispersion, which was
+\numGcnSdSmall{} or less on the torus, grows to the level of the spectral kernels'. Second, the
+hop field at 1584 satellites moves. In the softplus, $t_{0}=0.5$ arm the walk kernel reaches
+\numSeamHopsShellOneWalk{} against \numSeamHopsShellOneHeat{} for the heat kernel, a
+\numSeamHopsShellOneWins{} seed vote at Wilcoxon $p=\numSeamHopsShellOnePW$; pooled over the
+\numSeamArms{} arms the vote is \numSeamPooledHopsShellOneWins{} with
+$\bar d=\numSeamPooledHopsShellOneD$ and corrected $p=\numSeamPooledHopsShellOneHolm$, and the
+walk kernel wins in every arm under the majority rule at \numSeamWalkRobust{} of the six
+task-scale cells, the heat kernel at \numSeamHeatRobust{}. The preliminary version's direction at
+1584 satellites, which the torus does not reproduce, is therefore recovered on the graph the
+preliminary version described, on its task, in \numSeamPooledWalkSig{} of the six pooled tests
+after correction. What does not change is the rest of the grid: the pooled leaders agree with
+the torus in \numSeamPooledLeaderAgree{} of six (task, shell) pairs, the heat kernel keeps the
+264-satellite shell on both tasks (corrected $p=\numSeamPooledHopsSmallHolm$ and
+$\numSeamPooledDelaySmallHolm$), and the delay field certifies no direction on the large shells
+(\numSeamPooledDelayShellOneWins{} and \numSeamPooledDelayDoubleWins{}, corrected
+$p=\numSeamPooledDelayShellOneHolm$ and $\numSeamPooledDelayDoubleHolm$). The far-node metric
+(Table~\ref{tab:seampooledaurc}) certifies \numSeamPooledSigHolmAurc{} of six.
+
+The reading is not that the walk kernel is the better operator on seam-cut graphs. It is that a
+single link pattern, the seam, moves one cell of the grid from ``no direction'' to ``walk'' at
+the corrected level, on one task, while the other five cells stay where they were; an operator
+ranking on these graphs is a property of the graph family as much as of the operators, and the
+preliminary version, which reported the seam-cut result without having run it, was right about
+the direction at that cell for the wrong reason. The learned $t$ tells the same story from the
+other side: on the seam-cut graph the heat kernel's first-layer $t$ at 1584 satellites is
+\numSeamTlayerOneShellOneHeat{} against \numTlayerOneShellOneHeat{} on the torus, and the walk
+kernel's \numSeamTlayerOneShellOneWalk{} against \numTlayerOneShellOneWalk{}.
+
+\begin{table}[htbp]
+\centering
+\caption{Torus and seam-cut graph side by side, 1000 epochs, submitted capacity, softplus arm
+with $t_{0}=0.5$: the constant predictor, the three operators (mean $\pm$ sd over valid seeds,
+count in parentheses), the two first-draft fixed-reach baselines, the seed vote, the Wilcoxon
+$p$ and the operator leading in mean.}
+\label{tab:seam}
+\input{../figures/out/tab-seam.tex}
+\end{table}
+
+
+\begin{table}[htbp]
+\centering
+\caption{Seam-cut graph, MAE: the pooled form of rule~6, one test per (task, shell), with the
+columns of Table~\ref{tab:pooled}.}
+\label{tab:seampooled}
+\input{../figures/out/tab-seam-pooled.tex}
+\end{table}
+
 
 \subsection{Sensitivity of the reading rules}
 \label{sec:sens}
@@ -772,9 +1024,13 @@ rule, at floors of 1\%, 2\%, 5\% and 10\% and at majorities of six, seven and ei
 the number of large-shell hop-field cells of grid 1 that are rankable at each floor. The
 statement that no operator learns on the large shells at 200 epochs holds at 5\% and 10\%, weakens
 to \numRankableLargeAtGTwo{} of 24 cells at 2\% and \numRankableLargeAtGOne{} at 1\%, all on the
-1584-satellite shell; the inference of Section~\ref{sec:budget} does not depend on the floor.
+1584-satellite shell. The left block of the table is flat in the floor because every grid-2 cell
+clears even a 10\% floor, and its one movement is in the majority threshold: at eight of ten the
+two heat-majority cells become \numRobustHeatAtMajEight{} heat and \numRobustWalkAtMajEight{}
+walk, so the only majority result that survives rule~5 disappears under a one-seed tightening of
+the vote. The pooled inference of Section~\ref{sec:budget} depends on neither threshold.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Sensitivity of the rule-dependent counts to the floor threshold $g$ and the majority
 threshold. Left: task-scale cells of grid 2 in which the heat / walk kernel wins in every arm
@@ -794,15 +1050,16 @@ solution. Table~\ref{tab:collapse} breaks the count down by operator and records
 excluded run had escaped the constant solution before collapsing: the GCN collapses in
 \numCollapseGcn{} runs (\numCollapseGcnEscaped{} of them escapers), the heat kernel in
 \numCollapseHeat{} (\numCollapseHeatEscaped{}) and the walk kernel in \numCollapseWalk{}
-(\numCollapseWalkEscaped{}). The instability is not specific to the spectral operators or to the
-learned $t$, and because most excluded runs had not escaped, exclusion removes non-escaping runs
+(\numCollapseWalkEscaped{}); the fixed-reach baselines of~\eqref{eq:fixed} collapse in
+\numCollapsePpr{} (PPR) and \numCollapseSgc{} (SGC) runs. The instability is not specific to the
+spectral operators or to the learned $t$, and because most excluded runs had not escaped, exclusion removes non-escaping runs
 preferentially and every surviving mean is biased toward the escapers; the GCN, with the highest
 exclusion rate, is biased most. The paired tests of Section~\ref{sec:budget} are computed on the
 seeds valid for both kernels, so a seed removed for one kernel is removed for both. A fixed
 learning rate that is adequate for 200 epochs is not stable for 1000 on these graphs; we report
 the rate rather than tune it away.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Runs excluded as pathologies (loss rising by more than 1\% between thirds) out of
 runs, 1000 epochs, submitted capacity, both tasks and all $t$ arms pooled, and whether the
@@ -811,6 +1068,36 @@ collapsing.}
 \label{tab:collapse}
 \input{../figures/out/tab6-collapse.tex}
 \end{table}
+
+\paragraph{Which runs collapse depends on the floating-point precision}
+The eigenpairs are cached in single precision, and the first draft's check that cached and
+recomputed eigenpairs agree was a check of determinism, not of adequacy. The direct test is to
+rerun a cell with every tensor in double precision. Table~\ref{tab:precision} does so for the
+hop field at 1584 satellites, softplus arm with $t_{0}=0.5$, all ten seeds and all three
+operators (\numPrecRuns{} runs). The GCN's per-seed error moves by at most
+\numPrecGcnDelta{}. The two kernels' per-seed errors move by up to \numPrecHeatDelta{} (heat)
+and \numPrecWalkDelta{} (walk), which is the distance between the escaped and the constant
+solution: the same seed, with the same initial weights and the same instances, escapes in one
+precision and collapses in the other, and \numPrecPathologyThirtyTwo{} runs are excluded as
+pathologies in single precision against \numPrecPathologySixtyFour{} in double, on different
+seeds. The mean paired difference $\bar e_{\mathrm{heat}}-\bar e_{\mathrm{walk}}$ in this cell is
+\numPrecDiffThirtyTwo{} in single precision and \numPrecDiffSixtyFour{} in double, with a
+\numPrecWinsSixtyFour{} vote in double. A training trajectory that a change of rounding can move
+from one basin to the other is chaotic in the practical sense, and for the spectral kernels at
+this scale the precision acts as one more random seed. It does not affect all arms alike, as the
+first draft's threat statement assumed; it affects each run separately, and the seed-level
+bimodality of Section~\ref{sec:hidden} is its visible form.
+
+\begin{table}[htbp]
+\centering
+\caption{The same cell in single and double precision: hop field, 1584 satellites, 1000 epochs,
+submitted capacity, softplus arm with $t_{0}=0.5$. Mean MAE over the ten seeds (pathological runs
+included, since which runs are pathological is part of the result) in each precision, and the
+largest change of a single seed's MAE between the two.}
+\label{tab:precision}
+\input{../figures/out/tab-precision.tex}
+\end{table}
+
 
 \subsection{Cost, and the scale at which the method is feasible}
 \label{sec:cost}
@@ -829,7 +1116,7 @@ beyond that it needs a factorised or sparse propagator, which is a different imp
 mega-constellations of the introduction lie at the edge of that range and beyond it. For a
 comparison across scales, the cost of the operator is part of what is being compared.
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \caption{Median wall-clock seconds per training run on one GPU (eigendecomposition cached),
 submitted capacity, by shell and operator, at the two budgets. The 4400-satellite shell was not
@@ -848,17 +1135,32 @@ nonnegative row-stochastic matrix, exactly as the heat kernel is, and applying i
 damps and mixes them as a diffusion step does; what it inherits from the walk is the shape of its
 rows, an oscillatory profile whose width grows linearly with $t$ rather than as a square root
 (Figure~\ref{fig:spreading}). Once $t$ is a trained parameter, the heat kernel reaches as far by
-learning a larger $t$, which the right panel of Figure~\ref{fig:tlearned} shows it does, in the
-first layer and in proportion to the shell. That the two kernels are then indistinguishable is
-what the operator definitions make plausible, and it is what the paired tests find. The argument
-of CTQW-GNN~\cite{ctqwgnn} for the unitary propagator in feature space, which damps no frequency
-and preserves feature norm, is a different object and is neither confirmed nor refuted here.
+learning a larger $t$, which the right panel of Figure~\ref{fig:tlearned} and
+Table~\ref{tab:reach} show it does, in the first layer and in proportion to the shell. What the
+paired tests find has to be stated in two halves. Where the design has power, on the
+264-satellite shell, the heat kernel is better on both tasks, on both graphs, in every arm
+(Tables~\ref{tab:pooled} and~\ref{tab:seampooled}); \numCIExclZeroSmall{} of the
+\numCIExclZero{} per-cell intervals that exclude zero are on that shell, and they point the same
+way. On the larger shells of the torus the tests certify nothing, and the reason is stated in
+MAE units: the minimum detectable effect there is \numPooledMdeLargeMin{} to
+\numPooledMdeMax{}, and the observed differences are smaller. That is absence of evidence, not
+evidence of absence, and the first draft's sentence that the kernels ``are indistinguishable''
+overstated a null in the same way that the preliminary version overstated a difference. On the
+seam-cut graph the walk kernel takes the 1584-satellite hop field at the corrected level. The
+argument of CTQW-GNN~\cite{ctqwgnn} for the unitary propagator in feature space, which damps no
+frequency and preserves feature norm, is a different object and is neither confirmed nor refuted
+here.
 
 \paragraph{What the floor means for learned propagation on constellations}
 A budget that suffices on a 264-satellite shell does not on a 1584-satellite one, and the failure
 is silent: the run reports a finite, decreasing loss and an error that looks like a number.
-Comparisons of learned propagation across constellation sizes that hold the budget fixed will
-rank noise unless they carry the constant baseline beside every result.
+Carrying the constant baseline beside every result is necessary and not sufficient: at 200
+epochs the gains over it on the large shells were positive in every cell
+(Table~\ref{tab:floor}), and what exposed the floor was a threshold on the gain, whose value this
+study set with the 4400-satellite cells in view (Section~\ref{sec:rules}). The operative safeguard
+is a gain threshold fixed and justified before the runs, and a budget that is shown to clear it
+on every shell; the present study can only report that its own threshold was post hoc and that
+its conclusions hold at four values of it.
 
 \paragraph{What the seed-level bimodality and the vote noise mean}
 The split in Figure~\ref{fig:arms}, with escape rates of \numEscapeHeatPct\% and
@@ -867,23 +1169,34 @@ counts which seeds happened to escape. At the larger budget the majority statist
 up to \numSwapMaxMoved{} seeds between two correlated metrics on the same runs
 (Section~\ref{sec:swap}), which is the margin by which most of its verdicts were declared. The
 preliminary version's \numPrelimSeeds{}-seed result at 1584 satellites sits inside the range that
-this bimodality produces; its direction is not confirmed at ten seeds and, under inference, no
-direction is.
+this bimodality produces on the torus, where ten seeds split \numPooledHopsShellOneWins{}; on
+the seam-cut graph the same cell splits \numSeamPooledHopsShellOneWins{} in the preliminary
+direction. The bimodality itself is not a property of the seeds: Section~\ref{sec:collapse}
+shows that the precision of the arithmetic moves a seed between the two modes, so the split is
+a property of the training dynamics at this scale, and the number of seeds only measures it.
 
 \paragraph{Consequences for reporting}
 These are not new rules, and they are not the contribution; they are what this audit needed to
-avoid repeating its own preliminary version. Carry the constant predictor beside every result.
-Let the budget grow with the graph, or show that it need not. Treat any learned reach parameter's
-parameterisation and initialisation as an arm. Use a paired test with a multiplicity correction,
-and state the false-positive rate of any vote rule that is reported beside it. Count collapsed
-runs and report whether they had escaped.
+avoid repeating its own preliminary version, and two of them are what its own first draft needed
+and lacked. Carry the constant predictor beside every result, on every metric. Let the budget grow
+with the graph, or show that it need not. Treat any learned reach parameter's parameterisation and
+initialisation as an arm. Measure the reach of a ``reach-matched'' baseline. Use a paired test
+with a multiplicity correction, state the false-positive rate of any vote rule reported beside
+it, and state the minimum effect the corrected test can detect, since a null from a test that
+could not reject is not a finding. Count collapsed runs and report whether they had escaped. Check
+that the graph the code builds is the graph the text describes, by a property the text can be
+wrong about, such as the degree sequence.
 
 \paragraph{What would change the verdict}
 A propagator applied in feature space, unitary rather than stochastic, would test the argument of
 CTQW-GNN~\cite{ctqwgnn} directly; the wave-type models PDE-GCN~\cite{pdegcn} and graph-coupled
 oscillator networks~\cite{graphcon} are the classical form of the same argument and were not run.
-A learning-rate schedule would reduce the collapse rate of Section~\ref{sec:collapse} and might
-decide cells that are now undecided. A task with load, in which the field to be predicted depends
+A learning-rate schedule would reduce the collapse rate of Section~\ref{sec:collapse}, and with
+it the chaotic sensitivity to precision, and might decide cells that are now undecided; more
+seeds would lower the minimum detectable effect of the pooled tests, which at 1584 satellites on
+the hop field is \numPooledHopsShellOneMde{} with ten. Other link patterns than the torus and the
+seam cut, and the time-varying links of a real constellation, would say how far the
+seam-cut result of Section~\ref{sec:seam} generalises. A task with load, in which the field to be predicted depends
 on traffic and not only on geometry, and a time-varying evaluation that exercises the link
 churn the introduction invokes, would say whether any operator ranking survives contact with a
 network function. None of these is a small addition, and the present paper claims nothing about
@@ -907,9 +1220,20 @@ operators, not on the routing or resource-management systems that might use them
 4400-satellite cells were seen, as Section~\ref{sec:rules} states; Table~\ref{tab:sens} reports
 every dependent count at four values of it.
 
-\textbf{The majority rule has a 34.4\% null false-positive rate.} It is kept only so that the
-preliminary verdicts are reproducible, and no conclusion rests on it; the inference of rule~6 is
-what the paper stands on.
+\textbf{The majority rule has a 34.4\% null false-positive rate, and the per-cell test has
+almost no power.} The majority rule is kept only so that the preliminary verdicts are
+reproducible, and no conclusion rests on it. The per-cell Holm-corrected Wilcoxon test that the
+first draft stood on cannot reject in \numPowerCannotReject{} of \numGthreeArmCells{} cells at
+any effect size (Table~\ref{tab:power}); it is reported as description. The pooled test the
+paper now stands on has ten seeds per test and a minimum detectable effect that is stated beside
+every result; on the large shells it is \numPooledMdeLargeMin{} to \numPooledMdeMax{} in MAE
+units, which is coarse.
+
+\textbf{The baseline ladder is a ladder, not a tuning.} $\alpha$ and $K'$ take four values each,
+chosen to bracket the measured reach of the kernels, and the best rung is selected on the same
+seeds the comparison is scored on, which favours the baselines. A finer search might find a
+better fixed reach; it might also find a worse one, since the ladder's top rung already
+over-smooths the small shell.
 
 \textbf{Exclusion is differential.} Rule~2 removes runs after they have collapsed to the constant
 solution, so it removes non-escapers preferentially, and the GCN loses more runs than the spectral
@@ -920,11 +1244,14 @@ specific to Adam at 0.01 for 1000 epochs. Each seed evaluates on its own six ins
 sixty instances of a cell are distinct, but instance-level dispersion within a seed is not
 reported.
 
-\textbf{The eigenbasis is cached in single precision.} Training already casts the eigenpairs to
-single precision, so caching them is numerically identical to recomputing, and the cached and
-recomputed runs of a test cell agreed to \numCacheIdenticalDigits{} significant digits; but every
-arm shares one eigendecomposition per instance, and a numerical error in it would affect all
-arms alike.
+\textbf{The arithmetic is single precision, and the trajectories are chaotic.} Every arm
+shares one single-precision eigendecomposition per instance. Section~\ref{sec:collapse} shows
+that rerunning a cell in double precision moves individual seeds between the escaped and the
+collapsed mode and changes the sign of the cell's mean paired difference. The comparison between
+kernels within a precision is fair, since both see the same rounding; but any single run's
+outcome at 1584 satellites and above is not reproducible across precisions, and a result that
+rests on a handful of seeds at that scale, including the preliminary version's, is a sample from
+this chaos.
 
 \textbf{Several references are preprints.} CTQW-GNN~\cite{ctqwgnn}, CTQWformer~\cite{ctqwformer}
 and the LEO graph-learning work of Gu et al.~\cite{deepladu} are unrefereed at the time of
@@ -932,13 +1259,21 @@ writing, and GraphQWalk~\cite{graphqwalk} is a recent journal article. The argum
 declines to test rests on the first of these; the audit itself rests on the preliminary version,
 which is not in the refereed record either.
 
-\textbf{The preliminary artifact does not reproduce its own headline.} The released results of
-the preliminary version record \numPrelimParams{} parameters for the 1584-satellite experiment,
-which corresponds to the width-32, four-layer network its text describes, while the released code
-defaults to width 16 and three layers (\numReleasedParams{} parameters) and contains no script for
-that experiment. The preliminary version also ran without the seam cut that its text states. The
-present study fixes the seam cut on, runs both capacities, and releases the script for every
-number.
+\textbf{The preliminary artifact does not reproduce its own headline, and both versions
+misdescribed their graph.} The released results of the preliminary version record
+\numPrelimParams{} parameters for the 1584-satellite experiment, which corresponds to the
+width-32, four-layer network its text describes, while the released code defaults to width 16
+and three layers (\numReleasedParams{} parameters) and contains no script for that experiment.
+Both the preliminary version and the first drafts of this paper state that the counter-rotating
+seam is cut. In the generator the flag \texttt{seam=True} keeps the seam links, and every run of
+the two main grids was made with it; a docstring written for this study read the flag the other
+way, and the text copied the docstring. The error was found by reading Table~\ref{tab:fit}, where
+training and test error coincide, and confirmed by the degree sequence: every node of every
+main-grid snapshot has degree four. The main grids are therefore on the torus, described as such
+throughout this version, and the seam-cut graph is run as its own arm
+(Section~\ref{sec:seam}). The preliminary version's 1584-satellite claim was, in the event, made on
+the torus and recovered here on the seam-cut graph; neither its text nor its authors knew which
+graph it was on.
 
 % =====================================================================
 \section{Conclusion}
@@ -946,25 +1281,84 @@ number.
 
 We audited a preliminary result of our own: that the transition-probability kernel of a
 continuous-time quantum walk outperformed the heat kernel on a 1584-satellite ISL graph and did so
-increasingly with scale. The result does not reproduce. Under the preliminary budget the large
-shells are a floor on which no operator learns; at the one shell where learning occurs the
-ranking follows the parameterisation and initialisation of the learned propagation time through a
-seed-level bimodality with indistinguishable escape rates; and with a budget that clears the
-floor, paired tests across ten seeds separate the two kernels in no arm-level cell after
-multiplicity correction, on either metric. The two kernels are the same kind of object, a real
-row-stochastic propagator with a learned reach, and they behave like it; what the learned reach
-buys is visible against fixed-reach decoupled propagation, which the better kernel in its best
-arm beats by \numFixedGapPctHopsShellOne\% at 1584 satellites and \numFixedGapPctHopsDouble\% at
-3168 on the hop field, and which its worst arm barely beats or does not. What the audit adds
-beyond the non-reproduction is measured: a silent budget floor that scales with the graph, a
-propagation-time parameterisation that decides rankings at small budgets, a seed-vote statistic
-whose noise amplitude is two to three seeds on these data, and a collapse rate of a tenth of
-long runs. Each is a reason to distrust a small-seed operator comparison on constellation graphs,
-including the one we published first.
+increasingly with scale. Under the preliminary budget the large shells are a floor on which no
+operator learns; at the one shell where learning occurs the ranking follows the parameterisation
+and initialisation of the learned propagation time through a seed-level bimodality with
+indistinguishable escape rates. With a budget that clears the floor, the picture depends on the
+graph and on the question the test can answer: on the torus, which is the graph every main-grid
+run was in fact made on, the heat kernel is better on the smallest shell on both tasks and no
+direction is certified on the larger ones, where the minimum detectable effect of a ten-seed
+paired test is larger than any difference observed; on the seam-cut graph, which both versions
+described, the preliminary direction at 1584 satellites on the hop field is recovered at the
+corrected level, and nothing else moves. The two kernels are the same kind of object, a real
+row-stochastic propagator with a learned reach; what the learned reach buys against a fixed reach
+tuned over a ladder is \numLadderGapBestPctHopsShellOne\% at 1584 satellites in the best $t$ arm
+and a loss in the worst. What the audit adds beyond the correction of its own report is measured:
+a silent budget floor that scales with the graph, a propagation-time parameterisation that
+decides rankings at small budgets, a vote statistic whose noise amplitude is two to three seeds, a
+per-cell corrected test that could not have rejected in three quarters of its cells, a
+``reach-matched'' baseline that reached half as far as the kernels it was matched to, a
+misread flag that put every run on a different graph from the one described, and a training
+dynamics chaotic enough that the arithmetic's precision decides which seeds collapse. Each is a
+reason to distrust a small-seed operator comparison on constellation graphs, including the one
+we published first and the one we drafted second.
+
+\appendix
+\section{Supplementary tables}
+\label{app:tables}
+The per-cell inference on the far-node metric (Table~\ref{tab:aurcinf}), the pooled tests on that
+metric for both graphs (Tables~\ref{tab:pooledaurc} and~\ref{tab:seampooledaurc}), and the
+seam-cut grid arm by arm (Tables~\ref{tab:seamgrid} and~\ref{tab:seamgridinf}) are collected
+here; every number in them is
+produced by the same script as the tables of the main text.
+
+\begin{table}[H]
+\centering
+\caption{Grid 2, far-node error at 1000 epochs, submitted capacity: paired inference across
+seeds for each arm-level cell, with the same columns as Table~\ref{tab:grid3inf}: mean per-seed
+difference $e_{\mathrm{heat}}-e_{\mathrm{walk}}$ on the far-node metric with its 95\% bootstrap
+interval, exact sign-test $p$, exact Wilcoxon $p$, and the Wilcoxon $p$ Holm-corrected over the
+\numGthreeArmCells{} cells of this table; the constant predictor for each cell is in
+Table~\ref{tab:aurc}. The pooled form of rule~6 on this metric is in Table~\ref{tab:pooledaurc}.}
+\label{tab:aurcinf}
+\input{../figures/out/tab5b-aurc-inference.tex}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Grid 2, far-node error: the pooled form of rule~6, one test per (task, shell), with
+the columns of Table~\ref{tab:pooled}.}
+\label{tab:pooledaurc}
+\input{../figures/out/tab-pooled-aurc.tex}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Seam-cut graph, MAE at 1000 epochs, submitted capacity, every $t$ arm, with the columns
+of Table~\ref{tab:grid3}.}
+\label{tab:seamgrid}
+\input{../figures/out/tab-seam-grid.tex}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Seam-cut graph, MAE: paired inference across seeds for each arm-level cell, with the
+columns of Table~\ref{tab:grid3inf}; Holm correction over the \numSeamArmCells{} cells of this
+table.}
+\label{tab:seamgridinf}
+\input{../figures/out/tab-seam-grid-inference.tex}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Seam-cut graph, far-node error: the pooled form of rule~6.}
+\label{tab:seampooledaurc}
+\input{../figures/out/tab-seam-pooled-aurc.tex}
+\end{table}
 
 \section*{Data and code availability}
 All code, the cached graph instances' construction, every result file of the
-\numGridTwelveRuns{} plus \numGridThreeRuns{} runs, the scripts that produce every figure, table
+\numTotalRuns{} main-grid and \numRevTwoRuns{} auxiliary runs, the scripts that produce every figure, table
 and number in this paper, and the dated protocol declarations are available at
 \url{https://github.com/haodpsut/leo-propagation-reach}. The preliminary version and its
 released artifact are available at \url{https://github.com/haodpsut/qi-gnn-dynamic-wireless}.
