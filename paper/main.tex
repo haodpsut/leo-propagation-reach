@@ -712,14 +712,14 @@ Doubling the width and adding a layer does not change this: the submitted capaci
 below the floor at 1584 satellites as the released one. Nor does the $t$ arm. The floor is
 therefore not a capacity effect and not a parameterisation effect; Section~\ref{sec:budget} shows
 that it is a budget effect. Grid~1 is a torus result. \IfFileExists{../figures/out/tab-seam-floor.tex}{%
-Table~\ref{tab:seamfloor} repeats it on the seam-cut graph at the submitted capacity in
-\numSeamGridOneArms{} of the four $t$ arms (\numSeamGridOneRuns{} runs), so the cross-graph
-comparison covers that part of the arm space. On the seam-cut graph \numSeamGridOneFloorLarge{} of
-the \numSeamGridOneLargeCells{} large-shell cells are below the floor and \numSeamGridOneAboveFloor{}
-clears it, at \numSeamGainLargeMax\%, against \numTorusGridOneAboveFloorSameArms{} of 12 on the torus
-in the same arms; the floor therefore holds on both graphs at 5\%, but it is not equally deep. At
-1584 satellites on the hop field the gains are \numSeamGridOneHopsShellOneGains\% on the seam-cut
-graph against \numTorusGridOneHopsShellOneGains\% on the torus in the same two arms, larger by
+Table~\ref{tab:seamfloor} repeats it on the seam-cut graph at the submitted capacity in all
+\numSeamGridOneArms{} $t$ arms (\numSeamGridOneRuns{} runs). On the seam-cut graph
+\numSeamGridOneFloorLarge{} of the \numSeamGridOneLargeCells{} large-shell cells are below the
+floor and \numSeamGridOneAboveFloor{} clears it, at \numSeamGainLargeMax\%, against
+\numTorusGridOneAboveFloorSameArms{} of \numSeamGridOneLargeCells{} on the torus in the same arms;
+the floor therefore holds on both graphs at 5\%, but it is not equally deep. At 1584 satellites on
+the hop field the gains are \numSeamGridOneHopsShellOneGains\% on the seam-cut graph against
+\numTorusGridOneHopsShellOneGains\% on the torus, arm by arm in the same order, larger by
 \numSeamGridOneRatioMin{} to \numSeamGridOneRatioMax{} times, and at 264 satellites
 \numSeamGridOneHopsSmallGains\% against \numTorusGridOneHopsSmallGainsSameArms\%. The budget
 sets the floor on both graphs; the link pattern sets how far below it the large shells sit, and on
@@ -1507,8 +1507,7 @@ where it leads in all four on the seam-cut graph, and its training-to-test separ
 (\numRcutFitMaxGap) matches the torus (\numFitMaxGapHopsThree), not the seam-cut graph
 (\numSeamFitMaxGap). It shows that the seam is not necessary for the direction of the reversal;
 it does not certify the reversal on its own graph, and it contradicts the held-out-content
-account of why the cell moves. The grid-1 comparison of Table~\ref{tab:seamfloor} covers
-\numSeamGridOneArms{} of the four $t$ arms.
+account of why the cell moves.
 
 }{}\textbf{Exclusion is differential.} Rule~2 removes runs after they have collapsed to the constant
 solution, so it removes non-escapers preferentially, and the GCN loses more runs than the spectral
@@ -1565,9 +1564,9 @@ is read from, and nothing is claimed that is not in one of them.
 \item Under the preliminary budget the shells of 1584 satellites and more are a floor on the
   torus: the best operator gains at most \numGainLargeMax\% over the constant predictor in any
   arm at either capacity (Table~\ref{tab:floor}).\IfFileExists{../figures/out/tab-seam-floor.tex}{
-  On the seam-cut graph, in \numSeamGridOneArms{} of the four arms, \numSeamGridOneFloorLarge{} of
+  On the seam-cut graph, in all \numSeamGridOneArms{} arms, \numSeamGridOneFloorLarge{} of
   \numSeamGridOneLargeCells{} large-shell cells are below the floor and one, the 1584-satellite hop
-  cell, reaches \numSeamGainLargeMax\%; the gains at 1584 satellites are
+  cell in the softplus, $t_{0}=0.5$ arm, reaches \numSeamGainLargeMax\%; the gains at 1584 satellites are
   \numSeamGridOneRatioMin{} to \numSeamGridOneRatioMax{} times the torus's in the same arms
   (Table~\ref{tab:seamfloor}), so the budget sets the floor on both graphs and the link pattern
   sets the depth below it.}{ The seam-cut graph was not run at this budget.}
