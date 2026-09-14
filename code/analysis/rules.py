@@ -224,3 +224,28 @@ def summarise(c, key="mae", floor_gain=FLOOR_GAIN, win_seeds=WIN_SEEDS):
         else:
             vd = "tie"
     return st, cm, gain, vd, leader
+
+
+def read_pair(rows, task, shell, arms, cfg, epochs, key="mae", m=6, seed=0, nboot=2000):
+    """Algorithm 1 cua bai: doc MOT cap (task, shell) theo dung thu tu quy tac 3..6.
+    Quy tac 3 (pathology) da duoc gan luc load(); o day chi loc theo no trong cell().
+    Tra ve: per_arm {arm: (gain, verdict, leader, |S|)}, pooled (thong ke gop), mde tai muc hieu chinh 0.05/m.
+    Holm phai lam TREN CA HO m cap (certify()), khong lam duoc trong mot cap."""
+    per_arm = {}
+    for arm in arms:
+        c = cell(rows, task, shell, arm, cfg, epochs)               # rule 3: bo run pathology
+        st, cm, gain, vd, ld = summarise(c, key)                     # rule 4 (gain, floor) + rule 5 (majority, leader)
+        n_pairs = len(set(c.get("heat", {})) & set(c.get("qw", {})))
+        per_arm[arm] = (gain, vd, ld, n_pairs)
+    pooled = pooled_stats(rows, task, shell, arms, cfg, epochs, key, seed=seed, nboot=nboot)   # rule 6: d_s, CI, vote, sign, Wilcoxon
+    mde = mde_wilcoxon(pooled["sd"], pooled["n"], 0.05 / m) if pooled else float("nan")        # MDE at corrected threshold
+    return {"per_arm": per_arm, "pooled": pooled, "mde": mde}
+
+
+def certify(pairs, m=None):
+    """Holm tren ca ho (cung do thi, cung metric) roi chung nhan p_Holm < 0.05. pairs: list cua read_pair()."""
+    m = m or len(pairs)
+    ph = holm([p["pooled"]["p_wilcoxon"] for p in pairs])
+    for p, h in zip(pairs, ph):
+        p["p_holm"] = h; p["certified"] = bool(h < 0.05)
+    return pairs

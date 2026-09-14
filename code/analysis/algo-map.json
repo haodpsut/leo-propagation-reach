@@ -1,0 +1,7 @@
+{
+ "pathological": "pathology",
+ "gain of Eq": "gain",
+ "verdict of": "summarise",
+ "mean over": "pooled_stats",
+ "MDE": "mde_wilcoxon"
+}

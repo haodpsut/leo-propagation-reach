@@ -21,8 +21,13 @@
 \usepackage{amsmath,amssymb}
 \usepackage[hyphens]{url}
 \usepackage{tikz}
+\usepackage{rotating}
+\setlength{\emergencystretch}{1em}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usetikzlibrary{arrows.meta,positioning,fit,calc}
 \usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={Training Budget, Time Parameterisation and Link Pattern Decide the Ranking of Propagation Operators on LEO Inter-Satellite-Link Graphs},pdfauthor={Phuc Hao Do}}
 
 \setcounter{topnumber}{3}
 \setcounter{bottomnumber}{2}
@@ -67,7 +72,9 @@ or more. With a five-fold budget, on the torus, the heat kernel is better on the
 both tasks, two dependent tests at the smallest corrected $p$ the design can return, while at
 1584 satellites the paired tests resolve a difference \numMdeRatioHopsShellOne{} times the one
 under audit, so the torus is silent on it. On the seam-cut graph the preliminary direction at
-1584 satellites is recovered at the corrected level, on nine seeds, on one of two metrics. A
+1584 satellites is recovered at the corrected level, on nine seeds, on one of two metrics, and
+a control that removes as many links at random positions reproduces it, so the reversal follows
+the loss of vertex-transitivity rather than the seam. A
 learned $t$ beats the best tuned fixed-reach baseline by \numLadderGapBestPctHopsShellOne\% in its
 best arm and loses in its worst, and which long runs collapse changes with the floating-point
 precision. All code, results and the dated protocol are released.
@@ -163,11 +170,13 @@ arithmetic.
 \item On the seam-cut graph the preliminary direction at 1584 satellites on the hop field is
   recovered at the corrected level, on nine seeds, on the MAE metric only; on the far-node metric
   the preliminary version used, and which should favour reach, nothing is certified on that
-  graph. The other five (task, shell) pairs read as on the torus (Section~\ref{sec:seam}).
+  graph. A control that removes as many links at random positions reproduces the reversal, so
+  it follows the loss of vertex-transitivity, not the seam as a structure. The other five
+  (task, shell) pairs read as on the torus (Section~\ref{sec:seam}).
 \item Long training collapses \numGridThreePathologyPct\% of runs to the constant solution,
   counted rather than dropped, and which runs collapse depends on the floating-point precision:
-  the same seed escapes in one precision and collapses in the other
-  (Section~\ref{sec:collapse}).
+  the same seed escapes in one precision and collapses in the other; the three certified
+  verdicts rerun in double precision all hold (Section~\ref{sec:collapse}).
 \item The released artifact of the preliminary version used a network of \numPrelimParams{}
   parameters while its released code defaults to \numReleasedParams{}, with no script for the
   experiment in question; and both versions misread the generator's seam flag, so that every
@@ -336,7 +345,7 @@ $t\in[\numSpreadFitTmin,\numSpreadFitTmax]$ are \numSpreadExpHeat{} for the heat
 \label{fig:spreading}
 \end{figure}
 
-\subsection{Network, parameterisation of $t$, and tasks}
+\subsection{Network, parameterisation of \texorpdfstring{$t$}{t}, and tasks}
 \label{sec:network}
 
 The network has $K$ layers, each computing
@@ -419,8 +428,10 @@ baseline ladder, the seam-cut arm and the precision check of Section~\ref{sec:co
 \numLadderRuns{}, \numSeamRuns{} and \numPrecRuns{}. All runs were executed on one machine, one
 GPU per arm, with the eigendecomposition of each instance cached in single precision and shared,
 so that every arm sees bit-identical eigenpairs. Whether single precision is adequate is not
-settled by that identity; it is tested directly by rerunning one cell entirely in double precision
-(Section~\ref{sec:collapse}).
+settled by that identity; it is tested directly by rerunning one cell, and then every certified
+cell, entirely in double precision (Section~\ref{sec:collapse}). Together with the random-cut
+control of Section~\ref{sec:seam} these add \numPsixfourRuns{} and \numRcutRuns{} runs, and the
+seam-cut repeat of Grid~1 \numSeamGridOneRuns{}.
 
 \paragraph{Fixed-reach decoupled baselines, and their measured reach}
 A comparison of the three operators above confounds ``spectral'' with ``long-reaching'': the GCN
@@ -535,6 +546,47 @@ the first form of the rule had, by construction, almost no power; both forms are
   first draft did; these per-cell tests are descriptive, for the reason given next. The tests were
   checked against an independent implementation on random data and agree to nine decimal places.
 \end{enumerate}
+
+Algorithm~\ref{alg:cell} states rules 3 to 6 in the order in which the released code
+(\texttt{analysis/rules.py}: \texttt{cell}, \texttt{summarise}, \texttt{pooled\_stats},
+\texttt{holm}, \texttt{mde\_wilcoxon}) applies them to one (task, shell) pair; every table of
+Section~\ref{sec:results} is one call of it per pair, and the exclusion counts it returns are
+the ones printed in parentheses.
+
+\begin{algorithm}[htbp]
+\caption{Reading one (task, shell) pair (rules 3 to 6 of Section~\ref{sec:protocol})}
+\label{alg:cell}
+\begin{algorithmic}[1]
+\Require per-seed MAE $e_{\mathrm{op},s,a}$ and constant-predictor MAE $e_{0,s,a}$ for operators
+  $\mathrm{op}\in\{\mathrm{gcn},\mathrm{heat},\mathrm{walk}\}$, seeds $s\in\{1,\dots,10\}$,
+  $t$ arms $a\in\mathcal{A}$; training-loss trajectories; the Holm family size $m=6$
+\Ensure per-arm gain $g_{a}$, majority verdict $v_{a}$, pooled difference $\bar d$ with 95\%
+  CI, corrected $p_{\mathrm{Holm}}$, minimum detectable effect, exclusion counts
+\ForAll{runs $(\mathrm{op},s,a)$}                                       \Comment{rule 3}
+  \State mark the run \emph{pathological} if its loss is non-finite or rises by more than
+    1\% between successive thirds; a flat loss is a plateau and is kept
+\EndFor
+\ForAll{arms $a\in\mathcal{A}$}                                          \Comment{rules 4 and 5}
+  \State $\bar e_{\mathrm{op}} \gets$ mean of $e_{\mathrm{op},s,a}$ over non-pathological seeds;
+    $\bar e_{0} \gets$ mean of $e_{0,s,a}$ over all runs of the cell
+  \State $g_{a} \gets$ gain of Eq.~\eqref{eq:gain}; if $g_{a}<0.05$ the cell is not rankable
+  \State $S_{a} \gets$ seeds valid for both heat and walk; $v_{a} \gets$ verdict of
+    Eq.~\eqref{eq:win} on $S_{a}$, undecided if $|S_{a}|<7$; record the leader in mean
+\EndFor
+\ForAll{seeds $s$}                                                        \Comment{rule 6}
+  \State $d_{s} \gets$ mean over $\{a : s\in S_{a}\}$ of $e_{\mathrm{heat},s,a}-e_{\mathrm{walk},s,a}$
+\EndFor
+\State $\bar d \gets$ mean of $d_{s}$; CI from 2000 bootstrap resamples of $\{d_{s}\}$;
+  vote $\gets (|\{d_{s}<0\}| : |\{d_{s}>0\}|)$
+\State $p \gets$ exact two-sided Wilcoxon signed-rank test on $\{d_{s}\}$; $p_{\mathrm{sign}}
+  \gets$ exact sign test on the vote
+\State $p_{\mathrm{Holm}} \gets$ Holm correction of $p$ over the $m$ pairs of the same graph and metric
+\State MDE $\gets$ smallest $|\bar d|$ detected with power 0.8 at the corrected threshold
+  $0.05/m$, by simulation from the sample dispersion of $\{d_{s}\}$
+\State \Return a difference is \emph{certified} at the pair only if $p_{\mathrm{Holm}}<0.05$;
+  otherwise report $\bar d$, the CI and the MDE as the resolution of the design
+\end{algorithmic}
+\end{algorithm}
 
 \paragraph{Operating characteristics of rule~6}
 The exact Wilcoxon test on $n$ non-zero pairs cannot return a two-sided $p$ below $2/2^{n}$, and
@@ -1099,13 +1151,21 @@ separate by up to \numRcutFitMaxGap), but it has no seam. Table~\ref{tab:randomc
 1584-satellite hop cell on it in the same \numSeamArms{} arms (\numRcutRuns{} runs,
 \numRcutPathology{} excluded). Pooled over the arms, the random cut gives
 \numRcutRandomcutWins{} with $\bar d=\numRcutRandomcutD$ (Wilcoxon $p=\numRcutRandomcutPW$),
-against \numRcutTorusWins{} on the torus and \numRcutSeamcutWins{} on the seam cut. }{%
+against \numRcutTorusWins{} on the torus and \numRcutSeamcutWins{} on the seam cut. The random
+cut lands with the seam cut, not with the torus: the walk kernel leads it at the uncorrected
+level with an effect of the same size and sign as on the seam-cut graph, and its instances differ
+from one another as the seam-cut instances do. What moved the cell is therefore not the seam as
+a structure but the loss of vertex-transitivity that any such removal of links produces, which
+is what gives the hop field held-out content; the ``link pattern'' of the title is to be read in
+that sense, as the difference between a graph on which every destination sees the same field and
+one on which it does not, rather than as the seam of the Walker-delta constellation in
+particular. }{%
 The control that separates them, the same number of links removed at random positions so that
 the instances differ but no seam exists, is not in this version, and the attribution of the
 reversal to the seam rather than to the presence of held-out content is therefore not made.}
 
 \IfFileExists{../figures/out/tab-randomcut.tex}{%
-\begin{table}[htbp]
+\begin{sidewaystable}[htbp]
 \centering
 \caption{The 1584-satellite hop cell on three graphs at 1000 epochs, submitted capacity: the
 torus, the seam-cut graph, and the random-cut control, which removes as many inter-plane links
@@ -1114,8 +1174,8 @@ as the seam cut at random positions. Per arm: the constant predictor, the three 
 $p$ and the gain of the best operator over the constant predictor; below each graph the pooled
 test over its arms.}
 \label{tab:randomcut}
-\input{../figures/out/tab-randomcut.tex}
-\end{table}}{}
+{\small\input{../figures/out/tab-randomcut.tex}}
+\end{sidewaystable}}{}
 
 \begin{table}[htbp]
 \centering
@@ -1232,8 +1292,12 @@ satellites the vote is \numPsixfourSeamHopsShellOneWins{} on \numPsixfourSeamHop
 seeds ($\bar d=\numPsixfourSeamHopsShellOneD$, corrected $p=\numPsixfourSeamHopsShellOneHolm$).
 The per-arm counts $|S|$ change with the precision in \numPsixfourSeamHopsShellOneSchangeArms{}
 of the four seam-cut arms and in \numPsixfourHopsSmallSchangeArms{} and
-\numPsixfourDelaySmallSchangeArms{} of the four torus arms. A certification that holds in one
-precision and not in the other is reported as such in the summary of this paper.
+\numPsixfourDelaySmallSchangeArms{} of the four torus arms. All three certifications hold in
+both precisions, with the same leader, a vote of at least nine seeds in ten and a corrected
+$p$ below 0.05 in each; the precision moves individual seeds between basins, as the previous
+paragraph shows, without moving any of the three pooled verdicts. A certification that held in
+one precision and not in the other would have been reported as such in the summary of this
+paper; none needed to be.
 
 \begin{table}[htbp]
 \centering
@@ -1242,7 +1306,7 @@ arms in each precision, with the corrected $p$ obtained by substituting the doub
 Wilcoxon $p$ into the Holm family of six of the same graph and metric, and the number of valid
 seed pairs $|S|$ per arm.}
 \label{tab:precisioncertified}
-\input{../figures/out/tab-precision-certified.tex}
+{\footnotesize\setlength{\tabcolsep}{3pt}\input{../figures/out/tab-precision-certified.tex}}
 \end{table}}{}
 
 \begin{table}[htbp]
@@ -1449,7 +1513,7 @@ graph it was on.
 \label{sec:conclusion}
 
 We audited a preliminary result of our own: that the transition-probability kernel of a
-continuous-time quantum walk outperformed the heat kernel on a 1584-satellite ISL graph,
+continuous-time quantum walk beats the heat kernel on a 1584-satellite ISL graph,
 \numPrelimWalkMAE{} against \numPrelimHeatMAE{} from \numPrelimSeeds{} seeds, and did so
 increasingly with scale. What the audit establishes is listed here with the table each statement
 is read from, and nothing is claimed that is not in one of them.
@@ -1477,7 +1541,9 @@ is read from, and nothing is claimed that is not in one of them.
   tenth; on the far-node metric nothing is certified on that graph
   (Table~\ref{tab:seampooledaurc}). The other five (task, shell) pairs read as on the
   torus.\IfFileExists{../figures/out/tab-randomcut.tex}{ On a control that removes as many links
-  at random positions the same cell gives \numRcutRandomcutWins{} (Table~\ref{tab:randomcut}).}{}
+  at random positions the same cell gives \numRcutRandomcutWins{} with
+  $\bar d=\numRcutRandomcutD$ (Table~\ref{tab:randomcut}), the sign and size of the seam cut:
+  the reversal follows the loss of vertex-transitivity, not the seam as such.}{}
 \item Against a fixed reach tuned over a measured ladder, a learned $t$ in its best arm is ahead
   by \numLadderGapBestPctHopsShellOne\% at 1584 satellites on the hop field and behind in its
   worst arm (Table~\ref{tab:ladder}); the first-draft baselines reached half as far as the
@@ -1486,7 +1552,7 @@ is read from, and nothing is claimed that is not in one of them.
   precision (Table~\ref{tab:precision})\IfFileExists{../figures/out/tab-precision-certified.tex}{;
   of the three certified cells rerun in double precision, the 264-satellite hop and delay cells
   give \numPsixfourHopsSmallWins{} and \numPsixfourDelaySmallWins{} and the seam-cut 1584-satellite
-  cell \numPsixfourSeamHopsShellOneWins{} (Table~\ref{tab:precisioncertified})}{; the certified
+  cell \numPsixfourSeamHopsShellOneWins{}: all three hold (Table~\ref{tab:precisioncertified})}{; the certified
   cells were not rerun}.
 \end{itemize}
 The two kernels are the same kind of object, a real row-stochastic propagator with a learned

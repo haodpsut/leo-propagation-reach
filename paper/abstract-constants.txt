@@ -1,0 +1,5 @@
+# So trong abstract KHONG phai ket qua do: tham so thiet ke cua nghien cuu, dat truoc khi chay.
+264 = so ve tinh cua shell nho nhat (24x11), quy mo chinh cua ban so bo; tham so thiet ke
+1584 = so ve tinh cua shell Starlink shell-1 (72x22), shell ma tuyen bo so bo dang duoc kiem toan noi toi; tham so thiet ke
+4400 = so ve tinh cua shell lon nhat (100x44); tham so thiet ke
+2 = hai bai toan truong nut (hop field, delay field); tham so thiet ke

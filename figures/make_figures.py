@@ -84,15 +84,15 @@ def save(fig, name, target_w=W_WIDE):
 
 
 def pm(st, op, d=3):
-    return ("%%.%df $\\pm$ %%.%df (%%d)" % (d, d)) % (st[op][0], st[op][1], st[op][2]) if op in st else "---"
+    return ("%%.%df $\\pm$ %%.%df (%%d)" % (d, d)) % (st[op][0], st[op][1], st[op][2]) if op in st else "n/a"
 
 
 def fp(p):
-    return "---" if p != p else ("$<$0.001" if p < 0.001 else "%.3f" % p)
+    return "n/a" if p != p else ("$<$0.001" if p < 0.001 else "%.3f" % p)
 
 
 def fm(x):
-    return "---" if x != x else "%.3f" % x
+    return "n/a" if x != x else "%.3f" % x
 
 
 WIDE = {"tab3-s264-200ep.tex", "tab2-grid3.tex", "tab5-aurc.tex", "tab-swap.tex", "tab2b-grid3-inference.tex", "tab5b-aurc-inference.tex", "tab-fixed.tex",
@@ -279,7 +279,7 @@ for cfg in CFGS:
     if cfg == CFGS[0]:
         T.append("\\midrule")
 T.append("\\bottomrule\n\\end{tabular}"); tabfile("tab3-s264-200ep.tex", T)
-M("numSTwoSixFourWalkWinP", fp(walk_win_p) if walk_win_p is not None else "---")
+M("numSTwoSixFourWalkWinP", fp(walk_win_p) if walk_win_p is not None else "n/a")
 T = ["\\begin{tabular}{@{}llcc@{}}\n\\toprule\ncapacity & $t$ arm & heat: escaped/valid & walk: escaped/valid \\\\\n\\midrule"]
 tot_e = {"heat": [0, 0], "qw": [0, 0]}
 for cfg in CFGS:
@@ -411,7 +411,7 @@ if g3:
     M("numAurcHeatRobust", GA["nh"]); M("numAurcWalkRobust", GA["nw"]); M("numAurcSigHolm", GA["nsig"]); M("numAurcSigRaw", GA["nsigraw"])
     M("numAurcHeatWinsArm", sum(1 for v in GA["V"].values() if v[0] == "heat")); M("numAurcWalkWinsArm", sum(1 for v in GA["V"].values() if v[0] == "walk"))
     ps_rob = [G["V"][(t, s, a)][2]["p_sign"] for (t, s), v in G["rob"].items() if v == "heat" for a in ARMS3]
-    M("numGthreeRobustMaxPsign", "%.3f" % max(ps_rob) if ps_rob else "---"); M("numGthreeRobustMinPsign", "%.3f" % min(ps_rob) if ps_rob else "---")
+    M("numGthreeRobustMaxPsign", "%.3f" % max(ps_rob) if ps_rob else "n/a"); M("numGthreeRobustMinPsign", "%.3f" % min(ps_rob) if ps_rob else "n/a")
     # cac o "walk dan theo trung binh" nhung phan quyet hoa
     M("numGthreeWalkLeadTie", sum(1 for v in G["V"].values() if v[1] == "walk" and v[0] == "tie"))
 
@@ -490,12 +490,12 @@ if g3:
         def s_(c, op, n=True):
             v = [r["mae"] for r in c.get(op, {}).values()]
             if not v:
-                return "---"
+                return "n/a"
             return ("%.3f $\\pm$ %.3f" % (np.mean(v), np.std(v, ddof=1) if len(v) > 1 else 0)) + ((" (%d)" % len(v)) if n else "")
         for task in ("hops", "delay"):
             for sh in SHELLS:
                 c2 = R.cell_fixed_ops(g12, task, sh, "h32l4", 200); c3 = R.cell_fixed_ops(g3, task, sh, "h32l4", 1000)
-                best = "---"
+                best = "n/a"
                 if sh != "s4400":
                     best = "%.3f" % min(min(R.summarise(R.cell(g3, task, sh, a, "h32l4", 1000))[0][op][0] for op in ("heat", "qw")) for a in ARMS3)
                 cm_ = np.mean([r["const_mae"] for op in c2 for r in c2[op].values()]) if c2 else float("nan")
@@ -563,7 +563,7 @@ if g3:
                 sd = (ps["ci_hi"] - ps["ci_lo"]) / (2 * 1.96) * np.sqrt(n)
                 pw.append(R.mde_wilcoxon(sd, n, 0.05))
         mde = np.nanmedian(pw) if pw and not all(x != x for x in pw) else float("nan")
-        T.append("%d & %.5f & %.3f & %s & %d & %s \\\\" % (n, mp, min(1.0, m_cells * mp), "yes, only on $%d{:}0$" % n if can else "no", cnt, ("%.3f" % mde) if mde == mde else "---"))
+        T.append("%d & %.5f & %.3f & %s & %d & %s \\\\" % (n, mp, min(1.0, m_cells * mp), "yes, only on $%d{:}0$" % n if can else "no", cnt, ("%.3f" % mde) if mde == mde else "n/a"))
         if not can:
             n_cannot += cnt
         else:
@@ -588,17 +588,19 @@ if g3:
     M("numCIExpectedNull", "%.1f" % (0.05 * m_cells))
     # --- (2f) phep thu GOP: mot phep thu moi (task, shell), Holm tren 6
     for key, fname, nm in (("mae", "tab-pooled.tex", ""), ("aurc", "tab-pooled-aurc.tex", "Aurc")):
-        P = []; keys = []
+        # Algorithm 1 cua bai: read_pair (quy tac 3..6 trong mot cap) roi certify (Holm tren ho 6)
+        RP = []; keys = []
         for task in ("hops", "delay"):
             for sh in SHELLS[:3]:
-                P.append(R.pooled_stats(g3, task, sh, ARMS3, "h32l4", 1000, key)); keys.append((task, sh))
-        ph6 = R.holm([q["p_wilcoxon"] for q in P])
+                RP.append(R.read_pair(g3, task, sh, ARMS3, "h32l4", 1000, key, m=6)); keys.append((task, sh))
+        R.certify(RP, m=6)
+        P = [r["pooled"] for r in RP]; ph6 = [r["p_holm"] for r in RP]
         T = ["\\begin{tabular}{@{}lrrrrrrrrr@{}}\n\\toprule\n& & & \\multicolumn{2}{c}{$\\bar d$ over arms} & \\multicolumn{3}{c}{two-sided $p$} & & \\\\\n\\cmidrule(lr){4-5}\\cmidrule(lr){6-8}\ntask & $N$ & seeds & mean & 95\\% CI & sign & Wilcoxon & Holm (6) & heat:walk & MDE \\\\\n\\midrule"]
         nsig6 = 0; pws = []
         for (task, sh), q, h6 in zip(keys, P, ph6):
             star = "$^{*}$" if h6 < 0.05 else ""
             nsig6 += h6 < 0.05
-            pw = R.mde_wilcoxon(q["sd"], q["n"], 0.05 / 6); pws.append(pw)
+            pw = RP[len(pws)]["mde"]; pws.append(pw)
             T.append("%s & %d & %d & $%+.4f$ & $[%+.4f,\\,%+.4f]$ & %s & %s & %s%s & %d:%d & %s \\\\" % (task, NN[sh], q["n"], q["diff"], q["ci_lo"], q["ci_hi"], fp(q["p_sign"]), fp(q["p_wilcoxon"]), fp(h6), star, q["wins_a"], q["wins_b"], fm(pw)))
             M("numPooled" + nm + task.capitalize() + SHNAME[sh] + "Mde", fm(pw))
             M("numPooled" + nm + task.capitalize() + SHNAME[sh] + "Holm", fp(h6)); M("numPooled" + nm + task.capitalize() + SHNAME[sh] + "Wins", "%d:%d" % (q["wins_a"], q["wins_b"]))
@@ -671,7 +673,7 @@ if g3:
             best[(task, sh)] = min(means) if means else (float("nan"), "", None, 0)
             cm_[(task, sh)] = np.mean([r["const_mae"] for r in lad if (r["task"], r["shell"]) == (task, sh)])
         def sdn(v):
-            return ("%.3f $\\pm$ %.3f (%d)" % (np.mean(v), np.std(v, ddof=1) if len(v) > 1 else 0, len(v))) if v else "---"
+            return ("%.3f $\\pm$ %.3f (%d)" % (np.mean(v), np.std(v, ddof=1) if len(v) > 1 else 0, len(v))) if v else "n/a"
         excl = []
         # review vong 3 (3e): sd + n cho moi rung; bang xep theo KHOI tac vu de vua khung
         T = ["\\begin{tabular}{@{}lrrr@{}}\n\\toprule\noperator & 264 & 1584 & 3168 \\\\\n\\midrule"]
@@ -735,7 +737,7 @@ if g3:
                         continue
                     st, cm, gain, vd, ld = R.summarise(c); ps = R.paired_stats(c)
                     cf = R.cell_fixed_ops(rows_, task, sh, "h32l4", 1000)
-                    fx = "/".join(("%.3f" % np.mean([r["mae"] for r in cf[op].values()])) if cf.get(op) else "---" for op in ("ppr", "sgc"))
+                    fx = "/".join(("%.3f" % np.mean([r["mae"] for r in cf[op].values()])) if cf.get(op) else "n/a" for op in ("ppr", "sgc"))
                     T.append("%s & %d & %s & %.3f & %s & %s & %s & %s & %d:%d & %s & %s \\\\" % (task if lab == "torus" else "", NN[sh], lab, cm, pm(st, "gcn"), pm(st, "heat"), pm(st, "qw"), fx, ps["wins_a"], ps["wins_b"], fp(ps["p_wilcoxon"]), ld))
                     if lab == "torus":
                         ld_t = ld
@@ -784,7 +786,7 @@ if g3:
         for sh in SHELLS[:3]:
             for op in ("heat", "qw"):
                 c = R.cell(sc, "hops", sh, "softplus/t0=0.5", "h32l4", 1000); ts = np.array([r["t_learned"] for r in c.get(op, {}).values()])
-                M("numSeamTlayerOne" + SHNAME[sh] + ("Heat" if op == "heat" else "Walk"), "%.1f" % ts.mean(0)[0] if len(ts) else "---")
+                M("numSeamTlayerOne" + SHNAME[sh] + ("Heat" if op == "heat" else "Walk"), "%.1f" % ts.mean(0)[0] if len(ts) else "n/a")
         # train vs test tren do thi cat seam (het dang cau)
         gp = [abs(np.mean([r["train_mae"] for r in c.get(op, {}).values()]) - np.mean([r["mae"] for r in c.get(op, {}).values()]))
               for task in ("hops", "delay") for sh in SHELLS[:3] for c in [R.cell(sc, task, sh, "softplus/t0=0.5", "h32l4", 1000)] for op in CORE if c.get(op)]
@@ -918,7 +920,7 @@ def secs(rows, sh, op, ep, cfg="h32l4"):
     return np.median(v) if v else np.nan
 for sh in SHELLS:
     a = [secs(g12, sh, op, 200) for op in CORE]; b = [secs(g3, sh, op, 1000) for op in CORE] if g3 else [np.nan] * 3
-    T.append("%d & %s & & %s \\\\" % (NN[sh], " & ".join("%.0f" % x for x in a), " & ".join(("%.0f" % x) if x == x else "---" for x in b)))
+    T.append("%d & %s & & %s \\\\" % (NN[sh], " & ".join("%.0f" % x for x in a), " & ".join(("%.0f" % x) if x == x else "n/a" for x in b)))
 T.append("\\bottomrule\n\\end{tabular}"); tabfile("tab8-cost.tex", T)
 M("numSecsWalkLarge", "%.0f" % secs(g12, "s4400", "qw", 200)); M("numSecsGcnLarge", "%.0f" % secs(g12, "s4400", "gcn", 200)); M("numSecsHeatLarge", "%.0f" % secs(g12, "s4400", "heat", 200))
 M("numFeasibleNGpuMem", int(np.sqrt(24e9 / (4 * 4 * 4))) // 100 * 100)   # 24 GB, ~4 ma tran N^2 float32, du 4x
@@ -957,9 +959,9 @@ for op in ("heat", "qw"):
 shells_txt = " $\\cdot$ ".join(str(_SH[k][0]) for k in SHELLS)
 proto = r"""\begin{tikzpicture}[
   font=\scriptsize, >={Stealth[length=1.8mm]},
-  grp/.style={draw, rounded corners=1.5pt, inner sep=4pt, align=left, text width=46mm, minimum height=23mm, fill=black!3, anchor=north west},
-  grid/.style={draw, rounded corners=1.5pt, inner sep=3pt, align=left, text width=38mm, minimum height=15mm, fill=black!8, anchor=north west},
-  rule/.style={draw, rounded corners=1.5pt, inner sep=2.5pt, align=center, text width=21.5mm, minimum height=12mm, fill=black!12, anchor=north west},
+  grp/.style={draw, rounded corners=1.5pt, inner sep=4pt, align=left, text width=42mm, minimum height=23mm, fill=black!3, anchor=north west},
+  grid/.style={draw, rounded corners=1.5pt, inner sep=3pt, align=left, text width=34mm, minimum height=15mm, fill=black!8, anchor=north west},
+  rule/.style={draw, rounded corners=1.5pt, inner sep=2.5pt, align=center, text width=20mm, minimum height=12mm, fill=black!12, anchor=north west},
   lab/.style={font=\scriptsize\itshape, text=black!70, align=center}]
 % --- tang 1: thiet ke
 \node[grp] (g1) at (0,0) {\textbf{Graphs and tasks}\\[1pt]
