@@ -72,9 +72,10 @@ or more. With a five-fold budget, on the torus, the heat kernel is better on the
 both tasks, two dependent tests at the smallest corrected $p$ the design can return, while at
 1584 satellites the paired tests resolve a difference \numMdeRatioHopsShellOne{} times the one
 under audit, so the torus is silent on it. On the seam-cut graph the preliminary direction at
-1584 satellites is recovered at the corrected level, on nine seeds, on one of two metrics, and
-a control that removes as many links at random positions reproduces it, so the reversal follows
-the loss of vertex-transitivity rather than the seam. A
+1584 satellites is recovered at the corrected level, on nine seeds, on one of two metrics; a
+control that removes as many links at random positions moves the cell in the same direction but
+below its own resolution, so the seam is not necessary for the direction and the mechanism is
+not identified. A
 learned $t$ beats the best tuned fixed-reach baseline by \numLadderGapBestPctHopsShellOne\% in its
 best arm and loses in its worst, and which long runs collapse changes with the floating-point
 precision. All code, results and the dated protocol are released.
@@ -170,8 +171,10 @@ arithmetic.
 \item On the seam-cut graph the preliminary direction at 1584 satellites on the hop field is
   recovered at the corrected level, on nine seeds, on the MAE metric only; on the far-node metric
   the preliminary version used, and which should favour reach, nothing is certified on that
-  graph. A control that removes as many links at random positions reproduces the reversal, so
-  it follows the loss of vertex-transitivity, not the seam as a structure. The other five
+  graph. A control that removes as many links at random positions moves the cell in the same
+  direction, below its own corrected resolution and uncorrected, with one of four arms reversed:
+  the seam is not necessary for the direction, and the held-out-content mechanism proposed for
+  it is contradicted by the control's own training-to-test separation. The other five
   (task, shell) pairs read as on the torus (Section~\ref{sec:seam}).
 \item Long training collapses \numGridThreePathologyPct\% of runs to the constant solution,
   counted rather than dropped, and which runs collapse depends on the floating-point precision:
@@ -710,10 +713,17 @@ below the floor at 1584 satellites as the released one. Nor does the $t$ arm. Th
 therefore not a capacity effect and not a parameterisation effect; Section~\ref{sec:budget} shows
 that it is a budget effect. Grid~1 is a torus result. \IfFileExists{../figures/out/tab-seam-floor.tex}{%
 Table~\ref{tab:seamfloor} repeats it on the seam-cut graph at the submitted capacity in
-\numSeamGridOneArms{} of the four $t$ arms (\numSeamGridOneRuns{} runs): the largest gain over the
-constant predictor on any shell of 1584 satellites or more is \numSeamGainLargeMax\%, and
-\numSeamGridOneFloorLarge{} of the \numSeamGridOneLargeCells{} large-shell cells are below the
-floor. The budget floor is a property of the budget, not of the link pattern.}{%
+\numSeamGridOneArms{} of the four $t$ arms (\numSeamGridOneRuns{} runs), so the cross-graph
+comparison covers that part of the arm space. On the seam-cut graph \numSeamGridOneFloorLarge{} of
+the \numSeamGridOneLargeCells{} large-shell cells are below the floor and \numSeamGridOneAboveFloor{}
+clears it, at \numSeamGainLargeMax\%, against \numTorusGridOneAboveFloorSameArms{} of 12 on the torus
+in the same arms; the floor therefore holds on both graphs at 5\%, but it is not equally deep. At
+1584 satellites on the hop field the gains are \numSeamGridOneHopsShellOneGains\% on the seam-cut
+graph against \numTorusGridOneHopsShellOneGains\% on the torus in the same two arms, larger by
+\numSeamGridOneRatioMin{} to \numSeamGridOneRatioMax{} times, and at 264 satellites
+\numSeamGridOneHopsSmallGains\% against \numTorusGridOneHopsSmallGainsSameArms\%. The budget
+sets the floor on both graphs; the link pattern sets how far below it the large shells sit, and on
+the seam-cut graph the 1584-satellite hop cell sits at the threshold rather than under it.}{%
 It has not been repeated on the seam-cut graph, on which Section~\ref{sec:seam} shows that
 operator behaviour at the larger budget differs at exactly these shells, so the budget-floor
 finding is stated for the torus only.}
@@ -1118,7 +1128,11 @@ verdicts, and the same discount applies here: the recovered direction holds on M
 the metric built to detect the mechanism it is taken to support. Second, it rests on nine seeds
 where every other row of Table~\ref{tab:seampooled} has ten, and its $\bar d$ of
 \numSeamPooledHopsShellOneD{} sits at its own minimum detectable effect of
-\numSeamPooledHopsShellOneMde. The missing seed is seed \numSeamMissingSeeds, on which the heat
+\numSeamPooledHopsShellOneMde; and Section~\ref{sec:collapse} shows that the same cell rerun in
+double precision gives $\bar d=\numPsixfourSeamHopsShellOneD$ on ten seeds, a change of a
+quarter from the arithmetic alone, so the effect cannot be placed against that threshold to two
+decimals, and ``at the resolution'' is the honest reading in either precision: certified in both,
+by a margin that the precision moves. The missing seed is seed \numSeamMissingSeeds, on which the heat
 kernel collapsed in \numSeamMissingSeedPathHeat{} arms and the walk kernel in
 \numSeamMissingSeedPathWalk{}, leaving no arm valid for both. Restoring it changes the corrected
 $p$ as follows: if the tenth seed favoured the walk kernel, by the largest or the smallest
@@ -1144,22 +1158,40 @@ ratio between them barely moves, and the kernel with the longer learned time los
 The seam cut changes two things at once: the link pattern, and whether the hop field has any
 held-out content, since on the torus every destination sees the same field
 (Section~\ref{sec:network}). \IfFileExists{../figures/out/tab-randomcut.tex}{%
-A control separates them. The random-cut graph keeps the seam and removes the same number of
+A control was run to separate them, and it separates them less than we had hoped. The random-cut graph keeps the seam and removes the same number of
 inter-plane links, $S$ per snapshot, at random positions drawn per snapshot; it loses
 vertex-transitivity as the seam cut does, so its instances differ (training and test error
 separate by up to \numRcutFitMaxGap), but it has no seam. Table~\ref{tab:randomcut} runs the
 1584-satellite hop cell on it in the same \numSeamArms{} arms (\numRcutRuns{} runs,
 \numRcutPathology{} excluded). Pooled over the arms, the random cut gives
 \numRcutRandomcutWins{} with $\bar d=\numRcutRandomcutD$ (Wilcoxon $p=\numRcutRandomcutPW$),
-against \numRcutTorusWins{} on the torus and \numRcutSeamcutWins{} on the seam cut. The random
-cut lands with the seam cut, not with the torus: the walk kernel leads it at the uncorrected
-level with an effect of the same size and sign as on the seam-cut graph, and its instances differ
-from one another as the seam-cut instances do. What moved the cell is therefore not the seam as
-a structure but the loss of vertex-transitivity that any such removal of links produces, which
-is what gives the hop field held-out content; the ``link pattern'' of the title is to be read in
-that sense, as the difference between a graph on which every destination sees the same field and
-one on which it does not, rather than as the seam of the Walker-delta constellation in
-particular. }{%
+against \numRcutTorusWins{} on the torus and \numRcutSeamcutWins{} on the seam cut. The control
+is read under rule~6 like every other cell, and under that rule it does not certify anything:
+its $\bar d$ of \numRcutRandomcutD{} is below the \numRcutRandomcutMde{} the design resolves at
+the corrected level for this cell (Table~\ref{tab:randomcut} prints both the corrected and the
+uncorrected resolution), its Wilcoxon $p$ of \numRcutRandomcutPW{} is uncorrected because the
+control stands alone rather than in a family of six, and its interval
+$[\numRcutRandomcutCiLo,\,\numRcutRandomcutCiHi]$ would not survive the correction the seam-cut
+result carries. Rule~5 separates the two graphs as well: on the seam-cut graph the walk kernel
+leads in all \numRcutSeamcutArms{} arms, on the random cut in \numRcutRandomcutWalkArms{} of
+\numRcutRandomcutArms{}, the heat kernel leading the softplus, $t_{0}=0.5$ arm. What the control
+supports is that removing $S$ inter-plane links at random moves this cell in the same direction as
+the seam cut and by a comparable amount; what it does not support is the mechanism we had
+proposed for that movement. Section~\ref{sec:network} names held-out content, measured as the
+separation between training and test error, as what the loss of vertex-transitivity provides;
+that separation is \numFitMaxGapHopsThree{} on the torus (hop field), \numSeamFitMaxGap{} on the seam-cut graph and
+\numRcutFitMaxGap{} on the random cut, so on the variable nominated as the mechanism the control
+sits with the torus while on the outcome it sits with the seam cut. The mechanism is therefore
+not identified by these data: the random cut shows that the seam is not necessary for the
+reversal, and the separation figures show that held-out content in this sense is not what
+produces it. The ``link pattern'' of the title refers to the one change of graph this paper
+certifies, from the torus to the seam-cut graph; whether every departure from
+vertex-transitivity has the same effect is the question the control was run to answer, and it
+leaves it open. One further reading of the table: the GCN, which has no $t$, returns the same
+ten values in every arm by construction, and its seed dispersion of \numRcutGcnSd{} (range
+\numRcutGcnRange) is below the three decimals printed, because on this graph the one-hop
+operator sits within \numRcutGcnGapToConst{} of the constant predictor in every seed and the
+random removal leaves little for the seed to move. }{%
 The control that separates them, the same number of links removed at random positions so that
 the instances differ but no seam exists, is not in this version, and the attribution of the
 reversal to the seam rather than to the presence of held-out content is therefore not made.}
@@ -1466,7 +1498,19 @@ over-smooths the small shell. The rungs are unequally censored (\numLadderExclMi
 \numLadderExclMaxPct\% excluded), and the minimum over rungs leans towards the more censored
 ones, which flatters the baselines further.
 
-\textbf{Exclusion is differential.} Rule~2 removes runs after they have collapsed to the constant
+\IfFileExists{../figures/out/tab-randomcut.tex}{\textbf{The random-cut control is not certified,
+and it does not identify the mechanism.} The control of Section~\ref{sec:seam} is one cell on
+one graph: its $\bar d$ of \numRcutRandomcutD{} is below its corrected resolution of
+\numRcutRandomcutMde, its $p$ of \numRcutRandomcutPW{} is uncorrected because the cell has no
+family, the walk kernel leads in \numRcutRandomcutWalkArms{} of its \numRcutRandomcutArms{} arms
+where it leads in all four on the seam-cut graph, and its training-to-test separation
+(\numRcutFitMaxGap) matches the torus (\numFitMaxGapHopsThree), not the seam-cut graph
+(\numSeamFitMaxGap). It shows that the seam is not necessary for the direction of the reversal;
+it does not certify the reversal on its own graph, and it contradicts the held-out-content
+account of why the cell moves. The grid-1 comparison of Table~\ref{tab:seamfloor} covers
+\numSeamGridOneArms{} of the four $t$ arms.
+
+}{}\textbf{Exclusion is differential.} Rule~2 removes runs after they have collapsed to the constant
 solution, so it removes non-escapers preferentially, and the GCN loses more runs than the spectral
 kernels (Table~\ref{tab:collapse}). Means are therefore optimistic, most for the GCN.
 
@@ -1518,12 +1562,15 @@ continuous-time quantum walk beats the heat kernel on a 1584-satellite ISL graph
 increasingly with scale. What the audit establishes is listed here with the table each statement
 is read from, and nothing is claimed that is not in one of them.
 \begin{itemize}
-\item Under the preliminary budget the shells of 1584 satellites and more are a floor: the best
-  operator gains at most \numGainLargeMax\% over the constant predictor in any arm at either
-  capacity (Table~\ref{tab:floor}), on the torus\IfFileExists{../figures/out/tab-seam-floor.tex}{
-  and, in \numSeamGridOneArms{} arms, on the seam-cut graph, where the largest gain is
-  \numSeamGainLargeMax\% (Table~\ref{tab:seamfloor})}{; the seam-cut graph was not run at this
-  budget}.
+\item Under the preliminary budget the shells of 1584 satellites and more are a floor on the
+  torus: the best operator gains at most \numGainLargeMax\% over the constant predictor in any
+  arm at either capacity (Table~\ref{tab:floor}).\IfFileExists{../figures/out/tab-seam-floor.tex}{
+  On the seam-cut graph, in \numSeamGridOneArms{} of the four arms, \numSeamGridOneFloorLarge{} of
+  \numSeamGridOneLargeCells{} large-shell cells are below the floor and one, the 1584-satellite hop
+  cell, reaches \numSeamGainLargeMax\%; the gains at 1584 satellites are
+  \numSeamGridOneRatioMin{} to \numSeamGridOneRatioMax{} times the torus's in the same arms
+  (Table~\ref{tab:seamfloor}), so the budget sets the floor on both graphs and the link pattern
+  sets the depth below it.}{ The seam-cut graph was not run at this budget.}
 \item At the one shell where learning occurs at that budget, the ranking follows the
   parameterisation and initialisation of $t$ through a seed-level bimodality with escape rates of
   \numEscapeHeatPct\% and \numEscapeWalkPct\% (Tables~\ref{tab:s264} and~\ref{tab:escape}).
@@ -1542,8 +1589,10 @@ is read from, and nothing is claimed that is not in one of them.
   (Table~\ref{tab:seampooledaurc}). The other five (task, shell) pairs read as on the
   torus.\IfFileExists{../figures/out/tab-randomcut.tex}{ On a control that removes as many links
   at random positions the same cell gives \numRcutRandomcutWins{} with
-  $\bar d=\numRcutRandomcutD$ (Table~\ref{tab:randomcut}), the sign and size of the seam cut:
-  the reversal follows the loss of vertex-transitivity, not the seam as such.}{}
+  $\bar d=\numRcutRandomcutD$, the sign of the seam cut but below the control's own corrected
+  resolution of \numRcutRandomcutMde{} and uncorrected (Table~\ref{tab:randomcut}): the seam is
+  not necessary for the direction, the control certifies nothing, and the held-out-content
+  mechanism is contradicted by the control's training-to-test separation.}{}
 \item Against a fixed reach tuned over a measured ladder, a learned $t$ in its best arm is ahead
   by \numLadderGapBestPctHopsShellOne\% at 1584 satellites on the hop field and behind in its
   worst arm (Table~\ref{tab:ladder}); the first-draft baselines reached half as far as the
@@ -1557,7 +1606,7 @@ is read from, and nothing is claimed that is not in one of them.
 \end{itemize}
 The two kernels are the same kind of object, a real row-stochastic propagator with a learned
 reach, and on these graphs their ranking is decided by the budget, the parameterisation of $t$,
-and the link pattern before it is decided by the kernel. What the audit adds beyond the
+and the change from the torus to the seam-cut graph before it is decided by the kernel. What the audit adds beyond the
 correction of its own report is measured: a silent budget floor that scales with the graph, a
 propagation-time parameterisation that decides rankings at small budgets, a vote statistic whose
 noise amplitude is two to three seeds, a per-cell corrected test that could not have rejected in

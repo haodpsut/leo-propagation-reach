@@ -483,7 +483,7 @@ if g3:
     M("numFitMaxGap", "%.4f" % max(gaps))
     gaps_h = [abs(np.mean([r["train_mae"] for r in c.get(op, {}).values()]) - np.mean([r["mae"] for r in c.get(op, {}).values()]))
               for sh in SHELLS[:3] for c in [R.cell(g3, "hops", sh, "softplus/t0=0.5", "h32l4", 1000)] for op in CORE]
-    M("numFitMaxGapHops", "%.5f" % max(gaps_h))
+    M("numFitMaxGapHops", "%.5f" % max(gaps_h)); M("numFitMaxGapHopsThree", "%.3f" % max(gaps_h))
 
     if HAS_FIXED:
         T = ["\\begin{tabular}{@{}lrrllcllr@{}}\n\\toprule\n& & & \\multicolumn{2}{c}{200 epochs} & & \\multicolumn{3}{c}{1000 epochs} \\\\\n\\cmidrule{4-5}\\cmidrule{7-9}\ntask & $N$ & const & PPR & SGC & & PPR & SGC & best of heat/walk \\\\\n\\midrule"]
@@ -860,9 +860,21 @@ if g3:
                 c = R.cell(rows_, "hops", "s1584", a, "h32l4", 1000); st, cm, gain, vd, ld = R.summarise(c); ps = R.paired_stats(c)
                 T.append("%s & %s & %.3f & %s & %s & %s & %s & %d:%d & %s & %.0f\\%% \\\\" % (glab if a == arms_[0] else "", arm_label(a), cm, pm(st, "gcn"), pm(st, "heat"), pm(st, "qw"), ld, ps["wins_a"], ps["wins_b"], fp(ps["p_wilcoxon"]), 100 * gain))
             q = R.pooled_stats(rows_, "hops", "s1584", arms_, "h32l4", 1000)
-            T.append("\\multicolumn{10}{@{}l}{\\quad pooled over %d arms: $\\bar d=%+.4f$ $[%+.4f,\\,%+.4f]$, %d:%d, Wilcoxon $p=%s$, MDE %s} \\\\\\addlinespace[2pt]" % (len(arms_), q["diff"], q["ci_lo"], q["ci_hi"], q["wins_a"], q["wins_b"], fp(q["p_wilcoxon"]), fm(R.mde_wilcoxon(q["sd"], q["n"], 0.05))))
+            # ⛔ 14/09 (review vong 4, 3a): MDE o day tung tinh o alpha=0.05 (khong hieu chinh) trong khi Table 13/21
+            #    in MDE o 0.05/6 cho CUNG phep thu -> hai gia tri cho mot o (0.057 vs 0.087). Nay dung 0.05/6 nhu moi
+            #    bang pooled, va in ca hai muc cho ro.
+            mde6 = R.mde_wilcoxon(q["sd"], q["n"], 0.05 / 6); mde1 = R.mde_wilcoxon(q["sd"], q["n"], 0.05)
+            leaders_ = [R.summarise(R.cell(rows_, "hops", "s1584", a, "h32l4", 1000))[4] for a in arms_]
+            n_walk_arms = sum(l == "walk" for l in leaders_)
+            T.append("\\multicolumn{10}{@{}l}{\\quad pooled over %d arms: $\\bar d=%+.4f$ $[%+.4f,\\,%+.4f]$, %d:%d, Wilcoxon $p=%s$, MDE %s ($0.05/6$), %s ($0.05$); walk leads %d/%d arms} \\\\\\addlinespace[2pt]" % (len(arms_), q["diff"], q["ci_lo"], q["ci_hi"], q["wins_a"], q["wins_b"], fp(q["p_wilcoxon"]), fm(mde6), fm(mde1), n_walk_arms, len(arms_)))
             key_ = "numRcut" + glab.replace(" ", "").capitalize()
             M(key_ + "Wins", "%d:%d" % (q["wins_a"], q["wins_b"])); M(key_ + "PW", fp(q["p_wilcoxon"])); M(key_ + "D", "%+.4f" % q["diff"]); M(key_ + "Leader", "heat" if q["diff"] < 0 else "walk")
+            M(key_ + "Mde", fm(mde6)); M(key_ + "MdeRaw", fm(mde1)); M(key_ + "CiLo", "%+.4f" % q["ci_lo"]); M(key_ + "CiHi", "%+.4f" % q["ci_hi"])
+            M(key_ + "WalkArms", n_walk_arms); M(key_ + "Arms", len(arms_)); M(key_ + "BelowMde", "yes" if abs(q["diff"]) < mde6 else "no")
+            if glab == "random cut":
+                gc_ = R.cell(rows_, "hops", "s1584", arms_[0], "h32l4", 1000).get("gcn", {})
+                gv = [r["mae"] for r in gc_.values()]
+                M("numRcutGcnSd", "%.4f" % float(np.std(gv, ddof=1))); M("numRcutGcnRange", "%.4f" % (max(gv) - min(gv))); M("numRcutGcnGapToConst", "%.3f" % (cm - float(np.mean(gv))))
         T.append("\\bottomrule\n\\end{tabular}"); tabfile("tab-randomcut.tex", T)
         M("numRcutRuns", len(rc)); M("numRcutPathology", sum(r["pathology"] for r in rc if r["op"] in CORE))
         gp = [abs(np.mean([r["train_mae"] for r in c.get(op, {}).values()]) - np.mean([r["mae"] for r in c.get(op, {}).values()])) for a in arms_rc for c in [R.cell(rc, "hops", "s1584", a, "h32l4", 1000)] for op in CORE if c.get(op)]
@@ -886,6 +898,20 @@ if g3:
         M("numSeamGridOneRuns", len(sg1)); M("numSeamGridOneArms", len(arms_g1)); M("numSeamGainLargeMax", round(max(gbig), 1))
         M("numSeamGridOneFloorLarge", sum(1 for arm in arms_g1 for task in ("hops", "delay") for sh in SHELLS[1:] if R.summarise(R.cell(sg1, task, sh, arm, "h32l4", 200))[3] == "floor"))
         M("numSeamGridOneLargeCells", len(arms_g1) * 6)
+        # 14/09 (review vong 4, 3d): "san la cua budget, khong phai cua link pattern" bi bang 7 bac: gain o
+        # hop/1584 tren do thi cat seam lon hon torus (cung nhanh, cung capacity) 1.6x va 5.9x, mot o vuot 5%.
+        # In ti so tung nhanh va so o vuot san hai ben.
+        rat = []
+        for arm in arms_g1:
+            gs_ = 100 * R.summarise(R.cell(sg1, "hops", "s1584", arm, "h32l4", 200))[2]
+            gt_ = 100 * R.summarise(R.cell(g12, "hops", "s1584", arm, "h32l4", 200))[2]
+            rat.append((arm, gs_, gt_))
+        M("numSeamGridOneRatioMin", "%.1f" % min(a[1] / a[2] for a in rat)); M("numSeamGridOneRatioMax", "%.1f" % max(a[1] / a[2] for a in rat))
+        M("numSeamGridOneHopsShellOneGains", ", ".join("%.1f" % a[1] for a in rat)); M("numTorusGridOneHopsShellOneGains", ", ".join("%.1f" % a[2] for a in rat))
+        M("numSeamGridOneAboveFloor", len(arms_g1) * 6 - int(NUM["numSeamGridOneFloorLarge"]))
+        M("numTorusGridOneAboveFloorSameArms", sum(1 for arm in arms_g1 for task in ("hops", "delay") for sh in SHELLS[1:] if R.summarise(R.cell(g12, task, sh, arm, "h32l4", 200))[3] != "floor"))
+        g264 = [(100 * R.summarise(R.cell(sg1, "hops", "s264", arm, "h32l4", 200))[2], 100 * R.summarise(R.cell(g12, "hops", "s264", arm, "h32l4", 200))[2]) for arm in arms_g1]
+        M("numSeamGridOneHopsSmallGains", ", ".join("%.1f" % a for a, _ in g264)); M("numTorusGridOneHopsSmallGainsSameArms", ", ".join("%.1f" % b for _, b in g264))
     M("numHasSeamGridOne", int(HAS_SG1))
 
 
