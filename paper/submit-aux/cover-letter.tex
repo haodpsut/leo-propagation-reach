@@ -1,0 +1,61 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parskip}{5pt}\setlength{\parindent}{0pt}
+\begin{document}
+\begin{flushright}Danang, Vietnam\\ \today\end{flushright}
+
+Editor-in-Chief\\
+Computer Communications
+
+\textbf{Submission of ``Training Budget, Time Parameterisation and Link Pattern Decide the Ranking of
+Propagation Operators on LEO Inter-Satellite-Link Graphs''}
+
+Dear Editor,
+
+I submit the manuscript above for consideration as a regular paper in Computer Communications.
+
+\textbf{What the paper is.} It is an audit, with a pre-declared protocol, of a result I reported
+myself in a preliminary version circulated for review in June 2026: that the transition-probability
+kernel of a continuous-time quantum walk outperforms the heat kernel as a propagation operator on a
+1584-satellite low-Earth-orbit inter-satellite-link graph. Three operators sharing one eigenbasis and
+one network are compared on Walker-delta shells of 264 to 4400 satellites, two node-field tasks and
+ten seeds, across arms that vary the parameterisation and initialisation of the learned propagation
+time, the capacity, the training budget and the link pattern, against fixed-reach baselines whose
+reach is measured: 5590 training runs in all. The preliminary claim does not survive: under the
+preliminary budget no operator improves on a constant predictor by more than 2.9\% on any shell of
+1584 satellites or more; with a five-fold budget the heat kernel is better on the smallest shell on
+both tasks; and at 1584 satellites the paired design resolves a difference 4.3 times the one under
+audit. The preliminary direction is recovered only on the seam-cut graph, on nine seeds, on one of
+two metrics, and a control that removes as many links at random positions reproduces it below its
+own resolution, so its mechanism is not identified. Every claim is keyed to the table it is read
+from, minimum detectable effects are printed beside every null, and which long runs collapse is
+shown to depend on the floating-point precision.
+
+\textbf{Why Computer Communications.} The contribution is an evaluation protocol and a negative
+result about how propagation operators on satellite network graphs should be compared, in the line
+of the journal's recent extended evaluations of protocols and reproducible experimental procedures,
+rather than a new operator. The paper reports the regimes in which the audited method loses as
+carefully as those in which it does not.
+
+\textbf{Relation to prior work by the author.} The preliminary version was a case study inside a
+manuscript that was reviewed and not accepted elsewhere; it is not published, and it is cited here
+only as a preliminary version together with its released artifact, whose own headline this paper
+shows cannot be reproduced from that artifact. No text, figure or result file is shared with any
+manuscript of mine currently under review.
+
+\textbf{Reproducibility.} All code, every result file of the 5590 runs, the scripts that produce
+every figure, table and number, and the dated protocol declarations are released at
+\url{https://github.com/haodpsut/leo-propagation-reach}, release tag \texttt{comcom-v1}.
+
+The manuscript is single-authored, is not under consideration elsewhere, and declares the use of a
+generative AI assistant for code and editing in a dedicated section, as Elsevier policy requires.
+I declare no competing interests.
+
+Sincerely,
+
+Phuc Hao Do\\
+CAIRA, Danang Architecture University, Da Nang, Viet Nam\\
+\texttt{haodp@dau.edu.vn}
+\end{document}

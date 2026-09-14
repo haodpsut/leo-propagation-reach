@@ -426,15 +426,22 @@ Grid 1 runs both capacities, all four $t$ arms, four shells, two tasks, three op
 seeds at 200 epochs (\numGridTwelveRuns{} runs). Grid 2 runs the width-32 configuration at 1000
 epochs on the three smaller shells with \numGridThreeArms{} $t$ arms (\numGridThreeRuns{} runs).
 With the fixed-reach baselines below (\numFixedRunsTwelve{} runs at 200 epochs and
-\numFixedRunsThree{} at 1000), the two main grids comprise \numTotalRuns{} training runs; the
-baseline ladder, the seam-cut arm and the precision check of Section~\ref{sec:collapse} add
-\numLadderRuns{}, \numSeamRuns{} and \numPrecRuns{}. All runs were executed on one machine, one
+\numFixedRunsThree{} at 1000), the two main grids comprise \numTotalRuns{} training runs;
+Table~\ref{tab:runs} accounts for every run of the paper, the \numAuxRuns{} auxiliary runs of
+the ladder, the seam-cut arm, the precision checks, the random-cut control and the seam-cut
+repeat of grid~1 included, \numGrandRuns{} in all. All runs were executed on one machine, one
 GPU per arm, with the eigendecomposition of each instance cached in single precision and shared,
 so that every arm sees bit-identical eigenpairs. Whether single precision is adequate is not
 settled by that identity; it is tested directly by rerunning one cell, and then every certified
-cell, entirely in double precision (Section~\ref{sec:collapse}). Together with the random-cut
-control of Section~\ref{sec:seam} these add \numPsixfourRuns{} and \numRcutRuns{} runs, and the
-seam-cut repeat of Grid~1 \numSeamGridOneRuns{}.
+cell, entirely in double precision (Section~\ref{sec:collapse}).
+
+\begin{table}[htbp]
+\centering
+\caption{Every training run of the paper, by component; the auxiliary total and the grand total
+are stated here and cited from here.}
+\label{tab:runs}
+\input{../figures/out/tab-runs.tex}
+\end{table}
 
 \paragraph{Fixed-reach decoupled baselines, and their measured reach}
 A comparison of the three operators above confounds ``spectral'' with ``long-reaching'': the GCN
@@ -1407,7 +1414,9 @@ indistinguishable'' overstated a null in the same way that the preliminary versi
 difference. On the seam-cut graph the walk kernel takes the 1584-satellite hop field at the
 corrected level on MAE, on nine seeds, and not on the far-node metric
 (Section~\ref{sec:seam}); the direction is real on that graph and that metric, and it is no
-broader than that. The
+broader than that. A control that removes as many links at random positions reproduces the
+direction below its own resolution, so the seam is not necessary for it and the mechanism behind
+it is not identified (Sections~\ref{sec:seam} and~\ref{sec:threats}). The
 argument of CTQW-GNN~\cite{ctqwgnn} for the unitary propagator in feature space, which damps no
 frequency and preserves feature norm, is a different object and is neither confirmed nor refuted
 here.
@@ -1663,9 +1672,9 @@ table.}
 
 \section*{Data and code availability}
 All code, the cached graph instances' construction, every result file of the
-\numTotalRuns{} main-grid and \numRevTwoRuns{} auxiliary runs, the scripts that produce every figure, table
+\numTotalRuns{} main-grid and \numAuxRuns{} auxiliary runs (\numGrandRuns{} in all, Table~\ref{tab:runs}), the scripts that produce every figure, table
 and number in this paper, and the dated protocol declarations are available at
-\url{https://github.com/haodpsut/leo-propagation-reach}. The preliminary version and its
+\url{https://github.com/haodpsut/leo-propagation-reach}, release tag \texttt{comcom-v1}. The preliminary version and its
 released artifact are available at \url{https://github.com/haodpsut/qi-gnn-dynamic-wireless}.
 
 \section*{CRediT authorship contribution statement}

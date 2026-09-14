@@ -938,6 +938,20 @@ if g3:
         M("numPrecPathologySixtyFour", sum(r["pathology"] for r in pr)); M("numPrecPathologyThirtyTwo", sum(r["pathology"] for r in g3 if (r["task"], r["shell"], r["arm"], r["cfg"]) == ("hops", "s1584", "softplus/t0=0.5", "h32l4") and r["op"] in CORE))
     M("numHasPrecision", int(HAS_PREC)); M("numPrecRuns", len(pr))
     M("numRevTwoRuns", len(lad) + len(sc) + len(pr))
+    # 14/09 (review vong 5, 3a): tong phu tro phai gom CA rev3 (f64 ba o, random cut, luoi 1 cat seam); in MOT cho.
+    aux_items = [("baseline ladder (Sec.~\\ref{sec:budget})", len(lad)), ("seam-cut arm, grid 2 (Sec.~\\ref{sec:seam})", len(sc)),
+                 ("precision check, one cell (Sec.~\\ref{sec:collapse})", len(pr)),
+                 ("certified cells in double precision (Sec.~\\ref{sec:collapse})", int(NUM.get("numPsixfourRuns", 0))),
+                 ("random-cut control (Sec.~\\ref{sec:seam})", int(NUM.get("numRcutRuns", 0))),
+                 ("seam-cut repeat of grid 1 (Sec.~\\ref{sec:floor})", int(NUM.get("numSeamGridOneRuns", 0)))]
+    n_aux = sum(v for _, v in aux_items); n_main = len(g12) + len(g3)
+    M("numAuxRuns", n_aux); M("numGrandRuns", n_main + n_aux)
+    T = ["\\begin{tabular}{@{}lr@{}}\n\\toprule\ncomponent & runs \\\\\n\\midrule",
+         "grid 1 (Sec.~\\ref{sec:floor}) & %d \\\\" % len(g12), "grid 2 (Sec.~\\ref{sec:budget}) & %d \\\\" % len(g3),
+         "\\emph{main grids} & %d \\\\\\addlinespace[2pt]" % n_main]
+    T += ["%s & %d \\\\" % (k, v) for k, v in aux_items]
+    T += ["\\emph{auxiliary} & %d \\\\\\midrule\n\\textbf{total} & \\textbf{%d} \\\\\n\\bottomrule\n\\end{tabular}" % (n_aux, n_main + n_aux)]
+    tabfile("tab-runs.tex", T)
 
 # ================================================================ chi phi
 T = ["\\begin{tabular}{@{}lrrrcrrr@{}}\n\\toprule\n& \\multicolumn{3}{c}{200 epochs} & & \\multicolumn{3}{c}{1000 epochs} \\\\\n\\cmidrule{2-4}\\cmidrule{6-8}\n$N$ & GCN & heat & walk & & GCN & heat & walk \\\\\n\\midrule"]

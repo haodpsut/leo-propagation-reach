@@ -10,3 +10,8 @@ paper/*.blg
 paper/*.fls
 paper/*.fdb_latexmk
 paper/*.synctex.gz
+submit/
+paper/submit-aux/*.aux
+paper/submit-aux/*.log
+paper/submit-aux/*.out
+paper/submit-aux/*.pdf
